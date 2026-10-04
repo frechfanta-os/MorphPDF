@@ -98,4 +98,13 @@ MorphPDF arrête son architecture OCR documentée en détail dans [OCR_ENGINE_DE
 1. **Moteur Primaire (Universel & Souverain)** : **PaddleOCR sous ONNX Runtime Mobile** (`PaddleOcrEngine` + pont natif Android Kotlin `PaddleOcrBridge`). Architecture modulaire découplée associant la détection DBNet++ (`ch_PP-OCRv4_det`), la classification d'orientation 0/180° (`ch_ppocr_mobile_v2.0_cls`), et des modèles de reconnaissance spécialisés par écriture (`arabic_PP-OCRv3_rec` pour l'arabe, les chiffres arabo-indiens et le bilingue ; `en_PP-OCRv4_rec` pour le latin). MorphPDF prend en charge le post-traitement de normalisation logique Unicode BiDi (`BidiNormalizer`) pour l'indexation et le rendu, avec projection cartésienne vers le repère PDF (`OcrCoordinateMapper` via `CoordinateConverter.pixelRectToPdfRect`). Exécution séquentielle stricte ($N=1$) et limite dimensionnelle de sécurité ($4096 \times 4096$ px). 100% hors-ligne et sans dépendance envers Google Play Services.
 2. **Moteur Secondaire (Accélérateur Optionnel)** : **Google ML Kit Text Recognition V2** pour les scans exclusivement latins (français, anglais) lorsque Google Play Services est détecté sur le terminal (préservé via l'abstraction unifiée `OcrEngine` et `MlKitEngineMock`).
 
+---
+
+## 6. Moteur de Conversion PDF vers Word (.docx) — Architecture Arrêtée (Phase 5.0)
+
+MorphPDF retient l'architecture de conversion Word documentée en détail dans [WORD_CONVERSION_DECISION.md](WORD_CONVERSION_DECISION.md) :
+1. **Moteur Primaire (Mobile / In-Process)** : **MorphPDF Sovereign OOXML Engine en Dart Pur** (`package:archive` + encodeur XML OpenXML conforme ISO/IEC 29500 / ECMA-376). Reconstitution sémantique et fluide de la mise en page à partir du `DocumentModel` spatialisé, prise en charge native du balisage arabe et BiDi (`<w:bidi/>`, `<w:rtl/>`), des tables en twips (`dxa`), des images DrawingML en EMU, avec une cible de fidélité de Niveau 3.5 - 4 (structure et éditabilité réelles, rejet du faux pixel-perfect en zones de texte figées). 100% hors-ligne, zéro surcoût IPC, zéro dépendance C/NDK additionnelle.
+2. **Moteur Secondaire (Serveur / Batch)** : **Service Go OOXML Stream** (`backend/go/internal/conversion`) pour les traitements batch lourds, desktop et déploiements d'infrastructure future.
+
+
 
