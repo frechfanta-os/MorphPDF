@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-10-04T20:15:00Z",
+  "models": {
+    "detection": {
+      "name": "ch_PP-OCRv4_det_infer",
+      "file_name": "ch_PP-OCRv4_det_infer.onnx",
+      "version": "PP-OCRv4",
+      "framework": "PaddleOCR / Paddle2ONNX",
+      "format": "ONNX (opset 14)",
+      "quantization": "INT8 / FP32",
+      "input_name": "x",
+      "input_shape": [1, 3, "dynamic_h", "dynamic_w"],
+      "output_name": "sigmoid_0.tmp_0",
+      "output_shape": [1, 1, "dynamic_h", "dynamic_w"],
+      "license": "Apache-2.0",
+      "source_url": "https://paddleocr.bj.bcebos.com/PP-OCRv4/chinese/ch_PP-OCRv4_det_infer.tar",
+      "status": "VERIFIED_SPECIFICATION"
+    },
+    "classification": {
+      "name": "ch_ppocr_mobile_v2.0_cls_infer",
+      "file_name": "ch_ppocr_mobile_v2.0_cls_infer.onnx",
+      "version": "PP-OCRv2 Mobile",
+      "framework": "PaddleOCR / Paddle2ONNX",
+      "format": "ONNX (opset 14)",
+      "quantization": "INT8 / FP32",
+      "input_name": "x",
+      "input_shape": [1, 3, 48, 192],
+      "output_name": "save_infer_model/scale_0.tmp_1",
+      "output_shape": [1, 2],
+      "license": "Apache-2.0",
+      "source_url": "https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar",
+      "status": "VERIFIED_SPECIFICATION"
+    },
+    "recognition_arabic": {
+      "name": "arabic_PP-OCRv3_rec_infer",
+      "file_name": "arabic_PP-OCRv3_rec_infer.onnx",
+      "version": "PP-OCRv3 Multilingual",
+      "framework": "PaddleOCR / Paddle2ONNX",
+      "format": "ONNX (opset 14)",
+      "quantization": "INT8 / FP32",
+      "input_name": "x",
+      "input_shape": [1, 3, 48, "dynamic_w"],
+      "output_name": "softmax_0.tmp_0",
+      "output_shape": [1, "dynamic_seq_len", 128],
+      "dictionary_file": "dictionaries/arabic_dict.txt",
+      "license": "Apache-2.0",
+      "source_url": "https://paddleocr.bj.bcebos.com/PP-OCRv3/multilingual/arabic_PP-OCRv3_rec_infer.tar",
+      "status": "VERIFIED_SPECIFICATION"
+    },
+    "recognition_latin": {
+      "name": "en_PP-OCRv4_rec_infer",
+      "file_name": "en_PP-OCRv4_rec_infer.onnx",
+      "version": "PP-OCRv4",
+      "framework": "PaddleOCR / Paddle2ONNX",
+      "format": "ONNX (opset 14)",
+      "quantization": "INT8 / FP32",
+      "input_name": "x",
+      "input_shape": [1, 3, 48, "dynamic_w"],
+      "output_name": "softmax_0.tmp_0",
+      "output_shape": [1, "dynamic_seq_len", 97],
+      "dictionary_file": "dictionaries/en_dict.txt",
+      "license": "Apache-2.0",
+      "source_url": "https://paddleocr.bj.bcebos.com/PP-OCRv4/english/en_PP-OCRv4_rec_infer.tar",
+      "status": "VERIFIED_SPECIFICATION"
+    }
+  }
+}
