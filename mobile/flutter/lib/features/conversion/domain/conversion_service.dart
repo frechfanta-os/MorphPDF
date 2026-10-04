@@ -1,9 +1,11 @@
+import '../data/sovereign_pdf_to_word_converter.dart';
 import 'conversion_converter.dart';
 
 class ConversionService {
   final PdfToWordConverter _converter;
 
-  ConversionService(this._converter);
+  ConversionService([PdfToWordConverter? converter])
+      : _converter = converter ?? SovereignPdfToWordConverter();
 
   String get converterName => _converter.converterName;
 
@@ -15,3 +17,4 @@ class ConversionService {
     return _converter.convertPdfToWord(pdfPath, outputDocxPath, options: options);
   }
 }
+
