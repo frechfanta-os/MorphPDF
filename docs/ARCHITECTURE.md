@@ -84,9 +84,17 @@ Le cœur de MorphPDF s'articule autour d'un modèle spatialisé permettant de si
 
 ---
 
-## 4. Moteur PDF — Architecture Hybride Spécialisée (Phase 3.0)
+## 4. Moteur PDF — Architecture Hybride Spécialisée (Phase 3.0 & 3.1)
 
-MorphPDF retient une architecture hybride spécialisée documentée en détail dans [PDF_ENGINE_DECISION.md](PDF_ENGINE_DECISION.md) :
+MorphPDF retient une architecture hybride spécialisée documentée en détail dans [PDF_ENGINE_DECISION.md](PDF_ENGINE_DECISION.md) et [PDF_ENGINE_IMPLEMENTATION.md](PDF_ENGINE_IMPLEMENTATION.md) :
 1. **Moteur Primaire (Couche Flutter / FFI)** : **Google PDFium** pour le rendu vectoriel haute performance, le zoom interactif, la navigation, l'extraction de texte avec coordonnées spatiales et l'alignement précis du repère OCR.
 2. **Moteur Secondaire (Couche Go Backend)** : **pdfcpu** (100% Go pur, Apache 2.0) pour les manipulations structurelles lourdes (fusion, division, réorganisation, nettoyage, optimisation et compression sans perte).
+
+---
+
+## 5. Moteur OCR — Architecture et Sélection Finale (Phase 4.0)
+
+MorphPDF arrête son architecture OCR documentée en détail dans [OCR_ENGINE_DECISION.md](OCR_ENGINE_DECISION.md) :
+1. **Moteur Primaire (Universel & Souverain)** : **PaddleOCR (PP-OCRv4 / ONNX Runtime Mobile)**. Seul moteur capable de satisfaire l'exigence de premier rang pour l'**arabe (RTL, écriture cursive, ligatures, chiffres arabo-indiens)** tout en traitant le français et l'anglais, 100% hors-ligne et sans dépendance envers Google Play Services.
+2. **Moteur Secondaire (Accélérateur Optionnel)** : **Google ML Kit Text Recognition** pour les scans exclusivement latins (français, anglais) lorsque Google Play Services est détecté sur le terminal.
 
