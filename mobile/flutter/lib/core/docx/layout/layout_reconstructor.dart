@@ -8,9 +8,170 @@ import '../../../shared/models/text_block.dart';
 import '../ooxml_units.dart';
 import 'docx_elements.dart';
 
+/// Detection result for repetitive headers and footers across multi-page documents.
+class HeaderFooterDetectionResult {
+  final DocxHeader? header;
+  final DocxFooter? footer;
+  final List<List<TextBlock>> filteredPagesBlocks;
+
+  const HeaderFooterDetectionResult({
+    this.header,
+    this.footer,
+    required this.filteredPagesBlocks,
+  });
+}
+
 /// Heuristic layout reconstructor transforming spatial document blocks
-/// into semantic DOCX flow elements (paragraphs, headings, tables, images).
+/// into semantic DOCX flow elements (paragraphs, headings, tables, images, lists, columns).
 class LayoutReconstructor {
+  /// Detects repetitive headers and footers across multiple pages.
+  static HeaderFooterDetectionResult detectHeadersAndFooters({
+    required List<PageModel> pages,
+    required List<List<TextBlock>> pagesBlocks,
+  }) {
+    if (pages.length < 2 || pagesBlocks.length < 2) {
+      return HeaderFooterDetectionResult(
+        header: null,
+        footer: null,
+        filteredPagesBlocks: pagesBlocks,
+      );
+    }
+
+    // Top threshold (top 8% in PDF coordinates where Y=height is top)
+    // Bottom threshold (bottom 8% in PDF coordinates where Y=0 is bottom)
+    final candidateHeaderTexts = <String, int>{};
+    final candidateFooterTexts = <String, int>{};
+    final headerBlockIds = <String>{};
+    final footerBlockIds = <String>{};
+
+    for (int i = 0; i < pages.length; i++) {
+      final pageH = pages[i].height;
+      final topYThreshold = pageH * 0.92;
+      final bottomYThreshold = pageH * 0.08;
+      final blocks = pagesBlocks[i];
+
+      for (final b in blocks) {
+        final trimmed = b.text.trim();
+        if (trimmed.isEmpty) continue;
+
+        if (b.y >= topYThreshold) {
+          candidateHeaderTexts[trimmed] = (candidateHeaderTexts[trimmed] ?? 0) + 1;
+        } else if (b.y <= bottomYThreshold) {
+          // Normalize page numbers e.g. "Page 1" -> "Page N" or "1" -> "N"
+          final isPageNum = RegExp(r'^(page\s+)?\d+(\s*/\s*\d+)?$', caseSensitive: false).hasMatch(trimmed);
+          final key = isPageNum ? '__PAGE_NUM__' : trimmed;
+          candidateFooterTexts[key] = (candidateFooterTexts[key] ?? 0) + 1;
+        }
+      }
+    }
+
+    // Check if any candidate appears in >= 2 pages
+    String? detectedHeaderText;
+    for (final entry in candidateHeaderTexts.entries) {
+      if (entry.value >= 2) {
+        detectedHeaderText = entry.key;
+        break;
+      }
+    }
+
+    String? detectedFooterText;
+    bool footerIsPageNum = false;
+    for (final entry in candidateFooterTexts.entries) {
+      if (entry.value >= 2) {
+        if (entry.key == '__PAGE_NUM__') {
+          footerIsPageNum = true;
+          detectedFooterText = 'Page';
+        } else {
+          detectedFooterText = entry.key;
+        }
+        break;
+      }
+    }
+
+    // Mark blocks to filter out from body
+    final filtered = <List<TextBlock>>[];
+    for (int i = 0; i < pages.length; i++) {
+      final pageH = pages[i].height;
+      final topYThreshold = pageH * 0.92;
+      final bottomYThreshold = pageH * 0.08;
+      final pageFiltered = <TextBlock>[];
+
+      for (final b in pagesBlocks[i]) {
+        final trimmed = b.text.trim();
+        if (detectedHeaderText != null && b.y >= topYThreshold && trimmed == detectedHeaderText) {
+          headerBlockIds.add(b.id);
+          continue;
+        }
+        if (detectedFooterText != null && b.y <= bottomYThreshold) {
+          final isPageNum = RegExp(r'^(page\s+)?\d+(\s*/\s*\d+)?$', caseSensitive: false).hasMatch(trimmed);
+          if (footerIsPageNum && isPageNum) {
+            footerBlockIds.add(b.id);
+            continue;
+          } else if (trimmed == detectedFooterText) {
+            footerBlockIds.add(b.id);
+            continue;
+          }
+        }
+        pageFiltered.add(b);
+      }
+      filtered.add(pageFiltered);
+    }
+
+    DocxHeader? header;
+    if (detectedHeaderText != null) {
+      final isAr = BidiNormalizer.containsArabic(detectedHeaderText);
+      header = DocxHeader(
+        paragraphs: [
+          DocxParagraph(
+            runs: [
+              DocxRun(
+                text: BidiNormalizer.normalizeText(detectedHeaderText),
+                isRtl: isAr,
+                fontSizePt: 9.0,
+                colorHex: '7F7F7F',
+                csFontFamily: isAr ? 'Traditional Arabic' : null,
+              ),
+            ],
+            styleId: 'Header',
+            alignment: isAr ? DocxAlignment.right : DocxAlignment.center,
+            isRtl: isAr,
+            spacingAfterTwips: 0,
+          ),
+        ],
+      );
+    }
+
+    DocxFooter? footer;
+    if (detectedFooterText != null) {
+      final isAr = BidiNormalizer.containsArabic(detectedFooterText);
+      footer = DocxFooter(
+        paragraphs: [
+          DocxParagraph(
+            runs: [
+              DocxRun(
+                text: footerIsPageNum ? 'Page 1' : BidiNormalizer.normalizeText(detectedFooterText),
+                isRtl: isAr,
+                fontSizePt: 9.0,
+                colorHex: '7F7F7F',
+                csFontFamily: isAr ? 'Traditional Arabic' : null,
+              ),
+            ],
+            styleId: 'Footer',
+            alignment: DocxAlignment.center,
+            isRtl: isAr,
+            spacingAfterTwips: 0,
+          ),
+        ],
+      );
+    }
+
+    return HeaderFooterDetectionResult(
+      header: header,
+      footer: footer,
+      filteredPagesBlocks: filtered,
+    );
+  }
+
   /// Reconstructs a list of [DocxElement]s for a given page.
   static List<DocxElement> reconstructPage({
     required PageModel page,
@@ -70,20 +231,19 @@ class LayoutReconstructor {
     return elements;
   }
 
-  /// Detects vertical columns on a page based on X-coordinates and white valleys.
+  /// Detects vertical columns on a page strictly avoiding false positives.
   static List<List<TextBlock>> _detectColumns(double pageWidth, List<TextBlock> blocks) {
     if (blocks.length < 4) {
       return [blocks];
     }
 
     // Sort blocks by X coordinate
-    final sortedByX = List<TextBlock>.from(blocks)
-      ..sort((a, b) => a.x.compareTo(b.x));
+    final sortedByX = List<TextBlock>.from(blocks)..sort((a, b) => a.x.compareTo(b.x));
 
-    // Look for a significant vertical gutter (white valley) around page center
+    // Must find a significant continuous vertical white gutter (>= 20pt) in the middle 30% - 70% of page
     final minGutterWidth = 20.0;
-    final centerMin = pageWidth * 0.35;
-    final centerMax = pageWidth * 0.65;
+    final centerMin = pageWidth * 0.30;
+    final centerMax = pageWidth * 0.70;
 
     double maxGutter = 0.0;
     double gutterSplitX = 0.0;
@@ -104,21 +264,50 @@ class LayoutReconstructor {
     if (maxGutter >= minGutterWidth && gutterSplitX > 0) {
       final leftCol = <TextBlock>[];
       final rightCol = <TextBlock>[];
+      bool hasSpanningBlock = false;
 
       for (final b in blocks) {
-        if (b.x + b.width / 2.0 < gutterSplitX) {
+        // If a block spans across the gutter, layout is not pure 2-column
+        if (b.x < gutterSplitX - 5 && (b.x + b.width) > gutterSplitX + 5) {
+          hasSpanningBlock = true;
+          break;
+        }
+
+        if (b.x + b.width <= gutterSplitX + 5) {
           leftCol.add(b);
-        } else {
+        } else if (b.x >= gutterSplitX - 5) {
           rightCol.add(b);
         }
       }
 
-      // Check if document is predominantly Arabic (RTL reading order for columns)
-      final allText = blocks.map((b) => b.text).join(' ');
-      if (BidiNormalizer.isPredominantlyArabic(allText)) {
-        return [rightCol, leftCol];
-      } else {
-        return [leftCol, rightCol];
+      // Hardening checks:
+      // 1. No wide block spanning right across the gutter
+      // 2. Both columns must have at least 2 distinct blocks
+      // 3. Blocks in both columns must have width <= 55% of page width
+      if (!hasSpanningBlock && leftCol.length >= 2 && rightCol.length >= 2) {
+        final leftMaxWidth = leftCol.map((b) => b.width).reduce(max);
+        final rightMaxWidth = rightCol.map((b) => b.width).reduce(max);
+
+        if (leftMaxWidth <= pageWidth * 0.55 && rightMaxWidth <= pageWidth * 0.55) {
+          // Check for vertical overlap between columns
+          final leftMinY = leftCol.map((b) => b.y).reduce(min);
+          final leftMaxY = leftCol.map((b) => b.y + b.height).reduce(max);
+          final rightMinY = rightCol.map((b) => b.y).reduce(min);
+          final rightMaxY = rightCol.map((b) => b.y + b.height).reduce(max);
+
+          final overlapY = max(0.0, min(leftMaxY, rightMaxY) - max(leftMinY, rightMinY));
+          final avgHeight = ((leftMaxY - leftMinY) + (rightMaxY - rightMinY)) / 2.0;
+
+          if (overlapY >= avgHeight * 0.25) {
+            // Check if document is predominantly Arabic (RTL reading order for columns)
+            final allText = blocks.map((b) => b.text).join(' ');
+            if (BidiNormalizer.isPredominantlyArabic(allText)) {
+              return [rightCol, leftCol];
+            } else {
+              return [leftCol, rightCol];
+            }
+          }
+        }
       }
     }
 
@@ -172,7 +361,6 @@ class LayoutReconstructor {
   /// Builds a [DocxParagraph] from clustered [TextBlock]s.
   static DocxParagraph _buildParagraph(List<TextBlock> blocks, double pageWidth) {
     final fullText = blocks.map((b) => b.text).join(' ').trim();
-    final isArabic = BidiNormalizer.containsArabic(fullText);
     final isPredominantlyArabic = BidiNormalizer.isPredominantlyArabic(fullText);
 
     // Calculate average font size and dimensions
@@ -189,10 +377,43 @@ class LayoutReconstructor {
     final avgHeight = blocks.isNotEmpty ? totalH / blocks.length : 12.0;
     final spanWidth = maxX - minX;
 
-    // Heading detection
+    // List detection & prefix stripping
+    bool isList = false;
+    int? listNumId;
+    int indentTwips = 0;
+    String processedText = fullText;
+
+    final bulletPattern = RegExp(r'^([•\-\*▪◦▫–—])\s+');
+    final decimalPattern = RegExp(r'^(\d+[\.\)])\s+');
+    final letterPattern = RegExp(r'^([a-zA-Z][\.\)])\s+');
+    final arabicNumPattern = RegExp(r'^([٠-٩]+[\.\-])\s+');
+
+    if (bulletPattern.hasMatch(processedText)) {
+      isList = true;
+      listNumId = 1;
+      indentTwips = 720;
+      processedText = processedText.replaceFirst(bulletPattern, '');
+    } else if (decimalPattern.hasMatch(processedText)) {
+      isList = true;
+      listNumId = 2;
+      indentTwips = 720;
+      processedText = processedText.replaceFirst(decimalPattern, '');
+    } else if (letterPattern.hasMatch(processedText)) {
+      isList = true;
+      listNumId = 3;
+      indentTwips = 720;
+      processedText = processedText.replaceFirst(letterPattern, '');
+    } else if (arabicNumPattern.hasMatch(processedText)) {
+      isList = true;
+      listNumId = 4;
+      indentTwips = 720;
+      processedText = processedText.replaceFirst(arabicNumPattern, '');
+    }
+
+    // Heading detection (only if not a list item)
     String styleId = 'Normal';
     bool isHeading = false;
-    if (fullText.length <= 90 && blocks.length <= 2) {
+    if (!isList && fullText.length <= 90 && blocks.length <= 2) {
       if (avgHeight >= 18.0) {
         styleId = 'Heading1';
         isHeading = true;
@@ -215,31 +436,54 @@ class LayoutReconstructor {
       alignment = DocxAlignment.center;
     } else if (isPredominantlyArabic) {
       alignment = DocxAlignment.right;
-    } else if (spanWidth > pageWidth * 0.70) {
+    } else if (!isList && spanWidth > pageWidth * 0.70) {
       alignment = DocxAlignment.justify;
     } else {
       alignment = DocxAlignment.left;
     }
 
-    // List detection
-    bool isList = false;
-    int indentTwips = 0;
-    final listPattern = RegExp(r'^([•\-\*▪]|\d+[\.\)]|[a-zA-Z][\.\)]|[٠-٩]+[\.\-])\s+');
-    if (listPattern.hasMatch(fullText)) {
-      isList = true;
-      indentTwips = 360; // 0.25 inch hanging indent
-    }
-
-    // Construct runs with Arabic / BiDi support
+    // Construct runs with Arabic / BiDi / Hyperlink support
     final List<DocxRun> runs = [];
-    final tokens = fullText.split(' ');
+    final tokens = processedText.split(' ');
 
-    // Group adjacent words with same language/script
     String currentSegment = '';
     bool currentSegmentIsArabic = false;
 
     for (int i = 0; i < tokens.length; i++) {
       final token = tokens[i];
+      if (token.isEmpty) continue;
+
+      // Hyperlink check (URL)
+      final isUrl = token.startsWith('http://') || token.startsWith('https://') || token.startsWith('www.');
+
+      if (isUrl) {
+        // Flush previous text segment
+        if (currentSegment.isNotEmpty) {
+          runs.add(
+            _createRun(
+              text: currentSegment,
+              isArabic: currentSegmentIsArabic,
+              fontSizePt: avgHeight,
+              isBold: isHeading,
+            ),
+          );
+          currentSegment = '';
+        }
+
+        // Add hyperlink run
+        final targetUrl = token.startsWith('http') ? token : 'https://$token';
+        runs.add(
+          DocxRun(
+            text: token,
+            hyperlinkUrl: targetUrl,
+            fontSizePt: avgHeight,
+            colorHex: '0563C1',
+            isUnderline: true,
+          ),
+        );
+        continue;
+      }
+
       final tokenIsArabic = BidiNormalizer.containsArabic(token);
 
       if (currentSegment.isEmpty) {
@@ -276,12 +520,13 @@ class LayoutReconstructor {
     return DocxParagraph(
       runs: runs,
       alignment: alignment,
-      isRtl: isArabic,
+      isRtl: isPredominantlyArabic,
       styleId: styleId,
       isList: isList,
+      listNumId: listNumId,
       indentTwips: indentTwips,
       spacingBeforeTwips: isHeading ? 180 : 0,
-      spacingAfterTwips: isHeading ? 100 : 140,
+      spacingAfterTwips: isHeading ? 100 : (isList ? 60 : 140),
     );
   }
 
@@ -296,7 +541,7 @@ class LayoutReconstructor {
       isBold: isBold,
       fontSizePt: fontSizePt,
       isRtl: isArabic,
-      fontFamily: isArabic ? 'Calibri' : 'Calibri',
+      fontFamily: 'Calibri',
       csFontFamily: isArabic ? 'Traditional Arabic' : null,
     );
   }
@@ -346,23 +591,33 @@ class LayoutReconstructor {
         final cellText = cellBlocks.map((cb) => cb.text).join(' ').trim();
         final isAr = BidiNormalizer.containsArabic(cellText);
 
-        final p = DocxParagraph(
-          runs: [
-            DocxRun(
-              text: cellText.isNotEmpty ? BidiNormalizer.normalizeText(cellText) : ' ',
+        List<DocxParagraph> paragraphs = [];
+        if (cellText.isNotEmpty) {
+          paragraphs.add(
+            DocxParagraph(
+              runs: [
+                DocxRun(
+                  text: BidiNormalizer.normalizeText(cellText),
+                  isBold: r == 0,
+                  isRtl: isAr,
+                  csFontFamily: isAr ? 'Traditional Arabic' : null,
+                ),
+              ],
+              alignment: isAr ? DocxAlignment.right : DocxAlignment.left,
               isRtl: isAr,
-              csFontFamily: isAr ? 'Traditional Arabic' : null,
+              spacingAfterTwips: 0,
             ),
-          ],
-          alignment: isAr ? DocxAlignment.right : DocxAlignment.left,
-          isRtl: isAr,
-          spacingAfterTwips: 0,
-        );
+          );
+        }
 
         cells.add(
           DocxTableCell(
-            paragraphs: [p],
+            paragraphs: paragraphs,
             widthTwips: colWidthTwips,
+            cellMarginTopTwips: 100,
+            cellMarginBottomTwips: 100,
+            cellMarginLeftTwips: 150,
+            cellMarginRightTwips: 150,
           ),
         );
       }

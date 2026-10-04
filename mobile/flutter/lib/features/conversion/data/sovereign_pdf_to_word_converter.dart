@@ -34,16 +34,28 @@ class SovereignPdfToWordConverter implements PdfToWordConverter {
     final pages = await _pdfEngine.getPages(pdfPath);
     final sections = <DocxSection>[];
 
+    // Extract raw text blocks per page
+    final allPagesBlocks = <List<TextBlock>>[];
     for (int i = 0; i < pages.length; i++) {
       final pageNum = i + 1;
-      final page = pages[i];
-
       List<TextBlock> textBlocks = const [];
       try {
         textBlocks = await _pdfEngine.extractTextBlocks(pdfPath, pageNum);
       } catch (_) {
         textBlocks = const [];
       }
+      allPagesBlocks.add(textBlocks);
+    }
+
+    // Detect repetitive headers & footers across multi-page document
+    final headerFooterResult = LayoutReconstructor.detectHeadersAndFooters(
+      pages: pages,
+      pagesBlocks: allPagesBlocks,
+    );
+
+    for (int i = 0; i < pages.length; i++) {
+      final page = pages[i];
+      final textBlocks = headerFooterResult.filteredPagesBlocks[i];
 
       final elements = LayoutReconstructor.reconstructPage(
         page: page,
@@ -56,6 +68,8 @@ class SovereignPdfToWordConverter implements PdfToWordConverter {
           pageWidthPt: page.width,
           pageHeightPt: page.height,
           isLandscape: isLandscape,
+          header: headerFooterResult.header,
+          footer: headerFooterResult.footer,
           elements: elements,
         ),
       );

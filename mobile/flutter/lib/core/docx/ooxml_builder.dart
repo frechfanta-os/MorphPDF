@@ -3,13 +3,16 @@ import 'ooxml_relationships.dart';
 import 'ooxml_units.dart';
 import 'xml_sanitizer.dart';
 
-/// Serializes high-level [DocxSection]s and [DocxElement]s into compliant word/document.xml.
+/// Serializes high-level [DocxSection]s and [DocxElement]s into compliant word/document.xml,
+/// word/header1.xml, and word/footer1.xml conforming strictly to ECMA-376.
 class OoxmlBuilder {
-  /// Builds word/document.xml string and registers required relationships (images, etc.).
+  /// Builds word/document.xml string and registers required relationships (images, hyperlinks, etc.).
   static String buildDocumentXml({
     required List<DocxSection> sections,
     required OoxmlRelationships documentRels,
     required List<DocxImage> registeredImages,
+    String? headerRId,
+    String? footerRId,
   }) {
     final buffer = StringBuffer();
     buffer.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n');
@@ -30,9 +33,9 @@ class OoxmlBuilder {
         final element = section.elements[e];
 
         if (element is DocxParagraph) {
-          _writeParagraph(buffer, element);
+          _writeParagraph(buffer, element, documentRels);
         } else if (element is DocxTable) {
-          _writeTable(buffer, element);
+          _writeTable(buffer, element, documentRels);
         } else if (element is DocxImage) {
           final imgFileName = 'image$imageIndex.${element.extension}';
           final rId = documentRels.addRelationship(
@@ -56,19 +59,64 @@ class OoxmlBuilder {
 
     // Write final section properties <w:sectPr>
     final lastSection = sections.isNotEmpty ? sections.last : const DocxSection(elements: []);
-    _writeSectionProperties(buffer, lastSection);
+    _writeSectionProperties(
+      buffer,
+      lastSection,
+      headerRId: headerRId,
+      footerRId: footerRId,
+    );
 
     buffer.write('  </w:body>\n');
     buffer.write('</w:document>');
     return buffer.toString();
   }
 
-  static void _writeParagraph(StringBuffer buffer, DocxParagraph p) {
+  /// Builds valid word/header1.xml for header elements.
+  static String buildHeaderXml(DocxHeader header, {OoxmlRelationships? headerRels}) {
+    final buffer = StringBuffer();
+    buffer.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n');
+    buffer.write('<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"\n');
+    buffer.write('       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">\n');
+
+    final rels = headerRels ?? OoxmlRelationships();
+    for (final p in header.paragraphs) {
+      _writeParagraph(buffer, p, rels);
+    }
+
+    buffer.write('</w:hdr>');
+    return buffer.toString();
+  }
+
+  /// Builds valid word/footer1.xml for footer elements.
+  static String buildFooterXml(DocxFooter footer, {OoxmlRelationships? footerRels}) {
+    final buffer = StringBuffer();
+    buffer.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n');
+    buffer.write('<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"\n');
+    buffer.write('       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">\n');
+
+    final rels = footerRels ?? OoxmlRelationships();
+    for (final p in footer.paragraphs) {
+      _writeParagraph(buffer, p, rels);
+    }
+
+    buffer.write('</w:ftr>');
+    return buffer.toString();
+  }
+
+  static void _writeParagraph(StringBuffer buffer, DocxParagraph p, OoxmlRelationships rels) {
     buffer.write('    <w:p>\n');
     buffer.write('      <w:pPr>\n');
 
     if (p.styleId != 'Normal') {
       buffer.write('        <w:pStyle w:val="${XmlSanitizer.escape(p.styleId)}"/>\n');
+    }
+
+    // Numbering / Bullet list
+    if (p.isList && p.listNumId != null) {
+      buffer.write('        <w:numPr>\n');
+      buffer.write('          <w:ilvl w:val="${p.listLevel}"/>\n');
+      buffer.write('          <w:numId w:val="${p.listNumId}"/>\n');
+      buffer.write('        </w:numPr>\n');
     }
 
     if (p.isRtl) {
@@ -89,7 +137,18 @@ class OoxmlBuilder {
     buffer.write('      </w:pPr>\n');
 
     for (final run in p.runs) {
-      _writeRun(buffer, run);
+      if (run.hyperlinkUrl != null && run.hyperlinkUrl!.isNotEmpty) {
+        final rId = rels.addRelationship(
+          type: OoxmlRelationships.hyperlinkType,
+          target: run.hyperlinkUrl!,
+          targetMode: 'External',
+        );
+        buffer.write('      <w:hyperlink r:id="$rId" w:history="1">\n');
+        _writeRun(buffer, run);
+        buffer.write('      </w:hyperlink>\n');
+      } else {
+        _writeRun(buffer, run);
+      }
     }
 
     buffer.write('    </w:p>\n');
@@ -113,12 +172,18 @@ class OoxmlBuilder {
       buffer.write('          <w:iCs/>\n');
     }
 
-    if (run.isUnderline) {
+    if (run.isUnderline || run.hyperlinkUrl != null) {
       buffer.write('          <w:u w:val="single"/>\n');
+    }
+
+    if (run.isStrike) {
+      buffer.write('          <w:strike/>\n');
     }
 
     if (run.colorHex != null && run.colorHex!.isNotEmpty) {
       buffer.write('          <w:color w:val="${XmlSanitizer.escape(run.colorHex!)}"/>\n');
+    } else if (run.hyperlinkUrl != null) {
+      buffer.write('          <w:color w:val="0563C1"/>\n');
     }
 
     if (run.fontSizePt != null && run.fontSizePt! > 0) {
@@ -136,7 +201,7 @@ class OoxmlBuilder {
     buffer.write('      </w:r>\n');
   }
 
-  static void _writeTable(StringBuffer buffer, DocxTable tbl) {
+  static void _writeTable(StringBuffer buffer, DocxTable tbl, OoxmlRelationships rels) {
     buffer.write('    <w:tbl>\n');
     buffer.write('      <w:tblPr>\n');
     buffer.write('        <w:tblW w:w="0" w:type="auto"/>\n');
@@ -175,13 +240,27 @@ class OoxmlBuilder {
         if (cell.colSpan > 1) {
           buffer.write('            <w:gridSpan w:val="${cell.colSpan}"/>\n');
         }
+        if (cell.shadingColorHex != null && cell.shadingColorHex!.isNotEmpty) {
+          buffer.write('            <w:shd w:val="clear" w:color="auto" w:fill="${XmlSanitizer.escape(cell.shadingColorHex!)}"/>\n');
+        }
+        if (cell.cellMarginTopTwips != null ||
+            cell.cellMarginBottomTwips != null ||
+            cell.cellMarginLeftTwips != null ||
+            cell.cellMarginRightTwips != null) {
+          buffer.write('            <w:tcMar>\n');
+          if (cell.cellMarginTopTwips != null) buffer.write('              <w:top w:w="${cell.cellMarginTopTwips}" w:type="dxa"/>\n');
+          if (cell.cellMarginLeftTwips != null) buffer.write('              <w:left w:w="${cell.cellMarginLeftTwips}" w:type="dxa"/>\n');
+          if (cell.cellMarginBottomTwips != null) buffer.write('              <w:bottom w:w="${cell.cellMarginBottomTwips}" w:type="dxa"/>\n');
+          if (cell.cellMarginRightTwips != null) buffer.write('              <w:right w:w="${cell.cellMarginRightTwips}" w:type="dxa"/>\n');
+          buffer.write('            </w:tcMar>\n');
+        }
         buffer.write('          </w:tcPr>\n');
 
         if (cell.paragraphs.isEmpty) {
           buffer.write('          <w:p/>\n');
         } else {
           for (final cp in cell.paragraphs) {
-            _writeParagraph(buffer, cp);
+            _writeParagraph(buffer, cp, rels);
           }
         }
         buffer.write('        </w:tc>\n');
@@ -229,7 +308,12 @@ class OoxmlBuilder {
     buffer.write('    </w:p>\n');
   }
 
-  static void _writeSectionProperties(StringBuffer buffer, DocxSection section) {
+  static void _writeSectionProperties(
+    StringBuffer buffer,
+    DocxSection section, {
+    String? headerRId,
+    String? footerRId,
+  }) {
     final wTwips = OoxmlUnits.pointsToTwips(section.pageWidthPt);
     final hTwips = OoxmlUnits.pointsToTwips(section.pageHeightPt);
     final topTwips = OoxmlUnits.pointsToTwips(section.marginTopPt);
@@ -240,6 +324,14 @@ class OoxmlBuilder {
     final orientAttr = section.isLandscape ? ' w:orient="landscape"' : '';
 
     buffer.write('    <w:sectPr>\n');
+
+    if (headerRId != null) {
+      buffer.write('      <w:headerReference w:type="default" r:id="$headerRId"/>\n');
+    }
+    if (footerRId != null) {
+      buffer.write('      <w:footerReference w:type="default" r:id="$footerRId"/>\n');
+    }
+
     buffer.write('      <w:pgSz w:w="$wTwips" w:h="$hTwips"$orientAttr/>\n');
     buffer.write('      <w:pgMar w:top="$topTwips" w:right="$rightTwips" w:bottom="$bottomTwips" w:left="$leftTwips" w:header="720" w:footer="720" w:gutter="0"/>\n');
     buffer.write('    </w:sectPr>\n');

@@ -94,6 +94,40 @@ class OoxmlStyles {
       </w:tblCellMar>
     </w:tblPr>
   </w:style>
+
+  <w:style w:type="paragraph" w:styleId="Header">
+    <w:name w:val="header"/>
+    <w:basedOn w:val="Normal"/>
+    <w:pPr>
+      <w:spacing w:after="0" w:line="240" w:lineRule="auto"/>
+    </w:pPr>
+    <w:rPr>
+      <w:sz w:val="18"/>
+      <w:szCs w:val="18"/>
+      <w:color w:val="7F7F7F"/>
+    </w:rPr>
+  </w:style>
+
+  <w:style w:type="paragraph" w:styleId="Footer">
+    <w:name w:val="footer"/>
+    <w:basedOn w:val="Normal"/>
+    <w:pPr>
+      <w:spacing w:after="0" w:line="240" w:lineRule="auto"/>
+    </w:pPr>
+    <w:rPr>
+      <w:sz w:val="18"/>
+      <w:szCs w:val="18"/>
+      <w:color w:val="7F7F7F"/>
+    </w:rPr>
+  </w:style>
+
+  <w:style w:type="character" w:styleId="Hyperlink">
+    <w:name w:val="Hyperlink"/>
+    <w:rPr>
+      <w:color w:val="0563C1"/>
+      <w:u w:val="single"/>
+    </w:rPr>
+  </w:style>
 </w:styles>''';
   }
 
