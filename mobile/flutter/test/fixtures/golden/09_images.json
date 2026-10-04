@@ -1,0 +1,47 @@
+{
+  "fixtureName": "09_images",
+  "documentModel": {
+    "fileName": "09_images.pdf",
+    "pageCount": 1,
+    "fileSize": 786,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 2,
+    "lineCount": 2,
+    "wordCount": 10,
+    "tableCount": 0,
+    "imageCount": 1,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 1,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Document avec illustration integree",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 346.5,
+      "height": 18.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Image descriptive et schema d'architecture souveraine.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 356.40000000000003,
+      "height": 12.0
+    }
+  ]
+}

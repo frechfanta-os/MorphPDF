@@ -1,0 +1,74 @@
+{
+  "fixtureName": "13_mixed_complex",
+  "documentModel": {
+    "fileName": "13_mixed_complex.pdf",
+    "pageCount": 1,
+    "fileSize": 984,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 5,
+    "lineCount": 5,
+    "wordCount": 29,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 2,
+    "detectedLists": 3
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Synthese Globale MorphPDF",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 302.50000000000006,
+      "height": 22.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "1. Presentation Multilingue",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 237.60000000000002,
+      "height": 16.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "Le moteur gere l'arabe avec le plus grand soin: تقرير سنوي شامل",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 415.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_4",
+      "pageNumber": 1,
+      "text": "• Item 1: Traitement local",
+      "x": 50.0,
+      "y": 660.0,
+      "width": 171.60000000000002,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_5",
+      "pageNumber": 1,
+      "text": "• Item 2: Zero dependance externe",
+      "x": 50.0,
+      "y": 630.0,
+      "width": 217.8,
+      "height": 12.0
+    }
+  ]
+}

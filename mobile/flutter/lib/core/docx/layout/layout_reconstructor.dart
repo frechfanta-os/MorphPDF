@@ -377,43 +377,10 @@ class LayoutReconstructor {
     final avgHeight = blocks.isNotEmpty ? totalH / blocks.length : 12.0;
     final spanWidth = maxX - minX;
 
-    // List detection & prefix stripping
-    bool isList = false;
-    int? listNumId;
-    int indentTwips = 0;
-    String processedText = fullText;
-
-    final bulletPattern = RegExp(r'^([•\-\*▪◦▫–—])\s+');
-    final decimalPattern = RegExp(r'^(\d+[\.\)])\s+');
-    final letterPattern = RegExp(r'^([a-zA-Z][\.\)])\s+');
-    final arabicNumPattern = RegExp(r'^([٠-٩]+[\.\-])\s+');
-
-    if (bulletPattern.hasMatch(processedText)) {
-      isList = true;
-      listNumId = 1;
-      indentTwips = 720;
-      processedText = processedText.replaceFirst(bulletPattern, '');
-    } else if (decimalPattern.hasMatch(processedText)) {
-      isList = true;
-      listNumId = 2;
-      indentTwips = 720;
-      processedText = processedText.replaceFirst(decimalPattern, '');
-    } else if (letterPattern.hasMatch(processedText)) {
-      isList = true;
-      listNumId = 3;
-      indentTwips = 720;
-      processedText = processedText.replaceFirst(letterPattern, '');
-    } else if (arabicNumPattern.hasMatch(processedText)) {
-      isList = true;
-      listNumId = 4;
-      indentTwips = 720;
-      processedText = processedText.replaceFirst(arabicNumPattern, '');
-    }
-
-    // Heading detection (only if not a list item)
+    // Heading detection (headings take precedence over list items based on font size)
     String styleId = 'Normal';
     bool isHeading = false;
-    if (!isList && fullText.length <= 90 && blocks.length <= 2) {
+    if (fullText.length <= 90 && blocks.length <= 2) {
       if (avgHeight >= 18.0) {
         styleId = 'Heading1';
         isHeading = true;
@@ -423,6 +390,41 @@ class LayoutReconstructor {
       } else if (avgHeight >= 12.5 && !fullText.endsWith('.')) {
         styleId = 'Heading3';
         isHeading = true;
+      }
+    }
+
+    // List detection & prefix stripping (only if not a heading)
+    bool isList = false;
+    int? listNumId;
+    int indentTwips = 0;
+    String processedText = fullText;
+
+    if (!isHeading) {
+      final bulletPattern = RegExp(r'^([•\-\*▪◦▫–—])\s+');
+      final decimalPattern = RegExp(r'^(\d+[\.\)])\s+');
+      final letterPattern = RegExp(r'^([a-zA-Z][\.\)])\s+');
+      final arabicNumPattern = RegExp(r'^([٠-٩]+[\.\-])\s+');
+
+      if (bulletPattern.hasMatch(processedText)) {
+        isList = true;
+        listNumId = 1;
+        indentTwips = 720;
+        processedText = processedText.replaceFirst(bulletPattern, '');
+      } else if (decimalPattern.hasMatch(processedText)) {
+        isList = true;
+        listNumId = 2;
+        indentTwips = 720;
+        processedText = processedText.replaceFirst(decimalPattern, '');
+      } else if (letterPattern.hasMatch(processedText)) {
+        isList = true;
+        listNumId = 3;
+        indentTwips = 720;
+        processedText = processedText.replaceFirst(letterPattern, '');
+      } else if (arabicNumPattern.hasMatch(processedText)) {
+        isList = true;
+        listNumId = 4;
+        indentTwips = 720;
+        processedText = processedText.replaceFirst(arabicNumPattern, '');
       }
     }
 

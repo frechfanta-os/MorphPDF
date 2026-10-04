@@ -1,0 +1,344 @@
+{
+  "fixtureName": "15_stress_document",
+  "documentModel": {
+    "fileName": "15_stress_document.pdf",
+    "pageCount": 10,
+    "fileSize": 5386,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 2,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 3,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 4,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 5,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 6,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 7,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 8,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 9,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 10,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 10,
+    "blockCount": 30,
+    "lineCount": 30,
+    "wordCount": 240,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 10,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "MorphPDF Stress Benchmark - Page 1",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Section analytique 1 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_2_1",
+      "pageNumber": 2,
+      "text": "MorphPDF Stress Benchmark - Page 2",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_2_2",
+      "pageNumber": 2,
+      "text": "Section analytique 2 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_2_3",
+      "pageNumber": 2,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_3_1",
+      "pageNumber": 3,
+      "text": "MorphPDF Stress Benchmark - Page 3",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_3_2",
+      "pageNumber": 3,
+      "text": "Section analytique 3 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_3_3",
+      "pageNumber": 3,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_4_1",
+      "pageNumber": 4,
+      "text": "MorphPDF Stress Benchmark - Page 4",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_4_2",
+      "pageNumber": 4,
+      "text": "Section analytique 4 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_4_3",
+      "pageNumber": 4,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_5_1",
+      "pageNumber": 5,
+      "text": "MorphPDF Stress Benchmark - Page 5",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_5_2",
+      "pageNumber": 5,
+      "text": "Section analytique 5 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_5_3",
+      "pageNumber": 5,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_6_1",
+      "pageNumber": 6,
+      "text": "MorphPDF Stress Benchmark - Page 6",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_6_2",
+      "pageNumber": 6,
+      "text": "Section analytique 6 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_6_3",
+      "pageNumber": 6,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_7_1",
+      "pageNumber": 7,
+      "text": "MorphPDF Stress Benchmark - Page 7",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_7_2",
+      "pageNumber": 7,
+      "text": "Section analytique 7 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_7_3",
+      "pageNumber": 7,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_8_1",
+      "pageNumber": 8,
+      "text": "MorphPDF Stress Benchmark - Page 8",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_8_2",
+      "pageNumber": 8,
+      "text": "Section analytique 8 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_8_3",
+      "pageNumber": 8,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_9_1",
+      "pageNumber": 9,
+      "text": "MorphPDF Stress Benchmark - Page 9",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 336.6,
+      "height": 18.0
+    },
+    {
+      "id": "block_9_2",
+      "pageNumber": 9,
+      "text": "Section analytique 9 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 363.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_9_3",
+      "pageNumber": 9,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_10_1",
+      "pageNumber": 10,
+      "text": "MorphPDF Stress Benchmark - Page 10",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 346.5,
+      "height": 18.0
+    },
+    {
+      "id": "block_10_2",
+      "pageNumber": 10,
+      "text": "Section analytique 10 avec contenu de charge de travail.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 369.6,
+      "height": 12.0
+    },
+    {
+      "id": "block_10_3",
+      "pageNumber": 10,
+      "text": "Traitement sequentiel des flux de texte et verification d'integrite.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 448.8,
+      "height": 12.0
+    }
+  ]
+}

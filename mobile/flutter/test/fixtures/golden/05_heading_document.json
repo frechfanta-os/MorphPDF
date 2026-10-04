@@ -1,0 +1,83 @@
+{
+  "fixtureName": "05_heading_document",
+  "documentModel": {
+    "fileName": "05_heading_document.pdf",
+    "pageCount": 1,
+    "fileSize": 1051,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 6,
+    "lineCount": 6,
+    "wordCount": 28,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 2,
+    "detectedLists": 1
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "1. Architecture Globale",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 253.0,
+      "height": 20.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Introduction aux composants techniques de MorphPDF.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 336.6,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "1.1 Moteur OOXML Local",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 181.5,
+      "height": 15.0
+    },
+    {
+      "id": "block_1_4",
+      "pageNumber": 1,
+      "text": "Generation native sans serveur ni service tiers.",
+      "x": 50.0,
+      "y": 660.0,
+      "width": 316.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_5",
+      "pageNumber": 1,
+      "text": "1.1.1 Serialisation ECMA-376",
+      "x": 50.0,
+      "y": 620.0,
+      "width": 200.20000000000002,
+      "height": 13.0
+    },
+    {
+      "id": "block_1_6",
+      "pageNumber": 1,
+      "text": "Conformite stricte aux specifications internationales.",
+      "x": 50.0,
+      "y": 580.0,
+      "width": 356.40000000000003,
+      "height": 12.0
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "fixtureName": "02_arabic_rtl",
+  "documentModel": {
+    "fileName": "02_arabic_rtl.pdf",
+    "pageCount": 1,
+    "fileSize": 987,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 3,
+    "lineCount": 3,
+    "wordCount": 19,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "RTL",
+    "detectedHeadings": 1,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "تقرير الأداء المالي السنوي",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 286.0,
+      "height": 20.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "حققت المنظومة الرقمية نتائج استثنائية خلال الربع الأخير.",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 369.6,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "الالتزام الكامل بالسيادة الرقمية وتشفير المستندات محليا.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 369.6,
+      "height": 12.0
+    }
+  ]
+}

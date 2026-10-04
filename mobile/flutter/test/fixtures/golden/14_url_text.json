@@ -1,0 +1,47 @@
+{
+  "fixtureName": "14_url_text",
+  "documentModel": {
+    "fileName": "14_url_text.pdf",
+    "pageCount": 1,
+    "fileSize": 803,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 2,
+    "lineCount": 2,
+    "wordCount": 11,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 1,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Portail Officiel et Documentation",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 326.7,
+      "height": 18.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Pour plus d'informations consultez https://morphpdf.example.com en ligne.",
+      "x": 50.0,
+      "y": 730.0,
+      "width": 481.8,
+      "height": 12.0
+    }
+  ]
+}

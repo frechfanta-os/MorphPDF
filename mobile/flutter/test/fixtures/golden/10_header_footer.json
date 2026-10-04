@@ -1,0 +1,88 @@
+{
+  "fixtureName": "10_header_footer",
+  "documentModel": {
+    "fileName": "10_header_footer.pdf",
+    "pageCount": 2,
+    "fileSize": 1273,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 2,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 2,
+    "blockCount": 6,
+    "lineCount": 6,
+    "wordCount": 31,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 0,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "MorphPDF Enterprise Report",
+      "x": 50.0,
+      "y": 800.0,
+      "width": 143.0,
+      "height": 10.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Page 1 - Contenu de synthese de la premiere section.",
+      "x": 50.0,
+      "y": 600.0,
+      "width": 343.20000000000005,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "Confidentiel & Souverain",
+      "x": 50.0,
+      "y": 40.0,
+      "width": 132.0,
+      "height": 10.0
+    },
+    {
+      "id": "block_2_1",
+      "pageNumber": 2,
+      "text": "MorphPDF Enterprise Report",
+      "x": 50.0,
+      "y": 800.0,
+      "width": 143.0,
+      "height": 10.0
+    },
+    {
+      "id": "block_2_2",
+      "pageNumber": 2,
+      "text": "Page 2 - Suite de l'analyse et conclusions techniques.",
+      "x": 50.0,
+      "y": 600.0,
+      "width": 356.40000000000003,
+      "height": 12.0
+    },
+    {
+      "id": "block_2_3",
+      "pageNumber": 2,
+      "text": "Confidentiel & Souverain",
+      "x": 50.0,
+      "y": 40.0,
+      "width": 132.0,
+      "height": 10.0
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "fixtureName": "01_simple_french",
+  "documentModel": {
+    "fileName": "01_simple_french.pdf",
+    "pageCount": 1,
+    "fileSize": 945,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 4,
+    "lineCount": 4,
+    "wordCount": 25,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 2,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Rapport d'activite officiel 2026",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 352.0,
+      "height": 20.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Direction Generale - MorphPDF",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 223.30000000000004,
+      "height": 14.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "Le present document certifie la conversion souveraine sans perte.",
+      "x": 50.0,
+      "y": 700.0,
+      "width": 429.00000000000006,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_4",
+      "pageNumber": 1,
+      "text": "Toutes les operations s'executent en local sur l'appareil.",
+      "x": 50.0,
+      "y": 660.0,
+      "width": 382.8,
+      "height": 12.0
+    }
+  ]
+}

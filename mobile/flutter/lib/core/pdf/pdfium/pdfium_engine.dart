@@ -290,31 +290,54 @@ class PdfiumEngine {
     final bytes = await file.readAsBytes();
     final content = utf8.decode(bytes, allowMalformed: true);
 
-    // Look for text operators like (Some text) Tj
-    final regex = RegExp(r'\((.*?)\)\s*Tj');
-    final matches = regex.allMatches(content);
+    // Extract stream for the specific page if multiple streams exist
+    final streamRegex = RegExp(r'stream\s*(.*?)\s*endstream', dotAll: true);
+    final streamMatches = streamRegex.allMatches(content).toList();
+    final pageContent = (pageNumber <= streamMatches.length && pageNumber >= 1)
+        ? streamMatches[pageNumber - 1].group(1) ?? content
+        : content;
+
+    // Scan PDF stream operators sequentially to track font size, coordinates, and text
+    double currentFontSize = 12.0;
+    double currentX = 50.0;
+    double currentY = 780.0;
     final List<TextBlock> blocks = [];
     int idx = 1;
-    double currentY = 780.0;
+
+    final opRegex = RegExp(
+      r'(?:/F\d+\s+(\d+(?:\.\d+)?)\s+Tf)|(?:(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Td)|(?:\((.*?)\)\s*Tj)',
+    );
+    final matches = opRegex.allMatches(pageContent);
 
     for (final match in matches) {
-      final text = match.group(1);
-      if (text != null && text.isNotEmpty) {
-        blocks.add(
-          TextBlock(
-            id: 'block_${pageNumber}_$idx',
-            pageNumber: pageNumber,
-            text: text,
-            x: 50.0,
-            y: currentY,
-            width: text.length * 8.0,
-            height: 16.0,
-            confidence: 1.0,
-            language: 'fr',
-          ),
-        );
-        currentY -= 24.0;
-        idx++;
+      if (match.group(1) != null) {
+        currentFontSize = double.tryParse(match.group(1)!) ?? currentFontSize;
+      } else if (match.group(2) != null && match.group(3) != null) {
+        currentX = double.tryParse(match.group(2)!) ?? currentX;
+        currentY = double.tryParse(match.group(3)!) ?? currentY;
+      } else if (match.group(4) != null) {
+        final rawText = match.group(4)!;
+        final text = rawText
+            .replaceAll(r'\(', '(')
+            .replaceAll(r'\)', ')')
+            .replaceAll(r'\\', r'\');
+        if (text.isNotEmpty) {
+          blocks.add(
+            TextBlock(
+              id: 'block_${pageNumber}_$idx',
+              pageNumber: pageNumber,
+              text: text,
+              x: currentX,
+              y: currentY,
+              width: text.length * (currentFontSize * 0.55),
+              height: currentFontSize > 0 ? currentFontSize : 16.0,
+              confidence: 1.0,
+              language: 'fr',
+            ),
+          );
+          currentY -= (currentFontSize + 8.0);
+          idx++;
+        }
       }
     }
 
@@ -413,12 +436,20 @@ class PdfiumEngine {
       }
     }
 
+    double width = 595.0;
+    double height = 842.0;
+    final mediaBoxMatch = RegExp(r'/MediaBox\s*\[\s*(-?\d+)\s+(-?\d+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*\]').firstMatch(content);
+    if (mediaBoxMatch != null) {
+      width = double.tryParse(mediaBoxMatch.group(3) ?? '595') ?? 595.0;
+      height = double.tryParse(mediaBoxMatch.group(4) ?? '842') ?? 842.0;
+    }
+
     return PdfInspectionResult(
       fileName: file.uri.pathSegments.lastWhere((s) => s.isNotEmpty, orElse: () => 'document.pdf'),
       fileSizeBytes: fileSize,
       pageCount: max(1, pageCount),
-      defaultWidth: 595.0,
-      defaultHeight: 842.0,
+      defaultWidth: width,
+      defaultHeight: height,
       version: version,
       hasText: content.contains('BT') && content.contains('ET'),
     );

@@ -1,0 +1,56 @@
+{
+  "fixtureName": "08_table_rtl",
+  "documentModel": {
+    "fileName": "08_table_rtl.pdf",
+    "pageCount": 1,
+    "fileSize": 924,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 3,
+    "lineCount": 3,
+    "wordCount": 15,
+    "tableCount": 1,
+    "imageCount": 0,
+    "dominantDirection": "RTL",
+    "detectedHeadings": 1,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "جدول الميزانية التشغيلية :",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 228.8,
+      "height": 16.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "البند: الإيرادات العامة، القيمة: ١٠٠٠٠٠ ريال",
+      "x": 50.0,
+      "y": 730.0,
+      "width": 290.40000000000003,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "البند: المصروفات، القيمة: ٥٠٠٠٠ ريال",
+      "x": 50.0,
+      "y": 690.0,
+      "width": 237.60000000000002,
+      "height": 12.0
+    }
+  ]
+}

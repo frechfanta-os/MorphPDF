@@ -1,0 +1,66 @@
+{
+  "fixtureName": "12_multi_page",
+  "documentModel": {
+    "fileName": "12_multi_page.pdf",
+    "pageCount": 3,
+    "fileSize": 1323,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 2,
+      "width": 595.0,
+      "height": 842.0
+    },
+    {
+      "pageNumber": 3,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 3,
+    "blockCount": 3,
+    "lineCount": 3,
+    "wordCount": 15,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 3,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Document Multi-Page - Premiere Page",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 308.0,
+      "height": 16.0
+    },
+    {
+      "id": "block_2_1",
+      "pageNumber": 2,
+      "text": "Document Multi-Page - Deuxieme Page",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 308.0,
+      "height": 16.0
+    },
+    {
+      "id": "block_3_1",
+      "pageNumber": 3,
+      "text": "Document Multi-Page - Troisieme Page",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 316.8,
+      "height": 16.0
+    }
+  ]
+}

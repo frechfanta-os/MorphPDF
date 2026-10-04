@@ -1,0 +1,65 @@
+{
+  "fixtureName": "07_table",
+  "documentModel": {
+    "fileName": "07_table.pdf",
+    "pageCount": 1,
+    "fileSize": 964,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 4,
+    "lineCount": 4,
+    "wordCount": 25,
+    "tableCount": 1,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 1,
+    "detectedLists": 0
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Tableau recapitulatif des technologies :",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 308.00000000000006,
+      "height": 14.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "Composant: PDFium, Version: v122, Statut: Operationnel",
+      "x": 50.0,
+      "y": 730.0,
+      "width": 356.40000000000003,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "Composant: PaddleOCR, Version: v4 ONNX, Statut: Pret",
+      "x": 50.0,
+      "y": 690.0,
+      "width": 343.20000000000005,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_4",
+      "pageNumber": 1,
+      "text": "Composant: Sovereign OOXML, Version: v1.0, Statut: Valide",
+      "x": 50.0,
+      "y": 650.0,
+      "width": 376.20000000000005,
+      "height": 12.0
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "fixtureName": "06_bullets_numbering",
+  "documentModel": {
+    "fileName": "06_bullets_numbering.pdf",
+    "pageCount": 1,
+    "fileSize": 1027,
+    "mimeType": "application/pdf"
+  },
+  "pageDimensions": [
+    {
+      "pageNumber": 1,
+      "width": 595.0,
+      "height": 842.0
+    }
+  ],
+  "metrics": {
+    "pageCount": 1,
+    "blockCount": 6,
+    "lineCount": 6,
+    "wordCount": 30,
+    "tableCount": 0,
+    "imageCount": 0,
+    "dominantDirection": "LTR",
+    "detectedHeadings": 1,
+    "detectedLists": 5
+  },
+  "blocks": [
+    {
+      "id": "block_1_1",
+      "pageNumber": 1,
+      "text": "Fonctionnalites du systeme :",
+      "x": 50.0,
+      "y": 780.0,
+      "width": 215.60000000000002,
+      "height": 14.0
+    },
+    {
+      "id": "block_1_2",
+      "pageNumber": 1,
+      "text": "• Extraction native PDFium sans perte",
+      "x": 50.0,
+      "y": 740.0,
+      "width": 244.20000000000002,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_3",
+      "pageNumber": 1,
+      "text": "• Normalisation BiDi pour l'arabe",
+      "x": 50.0,
+      "y": 710.0,
+      "width": 217.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_4",
+      "pageNumber": 1,
+      "text": "1. Initialisation du document PDF",
+      "x": 50.0,
+      "y": 670.0,
+      "width": 217.8,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_5",
+      "pageNumber": 1,
+      "text": "2. Reconstruction spatiale du layout",
+      "x": 50.0,
+      "y": 640.0,
+      "width": 237.60000000000002,
+      "height": 12.0
+    },
+    {
+      "id": "block_1_6",
+      "pageNumber": 1,
+      "text": "3. Generation de l'archive DOCX",
+      "x": 50.0,
+      "y": 610.0,
+      "width": 204.60000000000002,
+      "height": 12.0
+    }
+  ]
+}
