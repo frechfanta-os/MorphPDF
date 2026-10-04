@@ -81,3 +81,12 @@ Le cœur de MorphPDF s'articule autour d'un modèle spatialisé permettant de si
 - `TextBlock` : Coordonnées cartésiennes (x, y, w, h), texte brut, niveau de confiance, langue.
 - `ImageBlock` : Détection des images bitmap/vectorielles extraites des pages.
 - `TableBlock` : Reconnaissance des cellules, colonnes et lignes pour la reconstruction de tableaux.
+
+---
+
+## 4. Moteur PDF — Architecture Hybride Spécialisée (Phase 3.0)
+
+MorphPDF retient une architecture hybride spécialisée documentée en détail dans [PDF_ENGINE_DECISION.md](PDF_ENGINE_DECISION.md) :
+1. **Moteur Primaire (Couche Flutter / FFI)** : **Google PDFium** pour le rendu vectoriel haute performance, le zoom interactif, la navigation, l'extraction de texte avec coordonnées spatiales et l'alignement précis du repère OCR.
+2. **Moteur Secondaire (Couche Go Backend)** : **pdfcpu** (100% Go pur, Apache 2.0) pour les manipulations structurelles lourdes (fusion, division, réorganisation, nettoyage, optimisation et compression sans perte).
+
