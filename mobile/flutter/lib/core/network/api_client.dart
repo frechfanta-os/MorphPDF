@@ -36,6 +36,14 @@ class ApiClient {
     }
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> post(String path, Map<String, dynamic> body) async {
+    final json = await _post(path, body: body);
+    return ApiResponse.fromJson(
+      json,
+      (data) => data is Map<String, dynamic> ? data : <String, dynamic>{},
+    );
+  }
+
   Future<Map<String, dynamic>> _post(String path, {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('$_baseUrl$path');
     try {
