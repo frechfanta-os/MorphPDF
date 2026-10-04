@@ -1,0 +1,38 @@
+# Environment and secrets
+.env
+*.local
+*.keystore
+*.jks
+
+# Flutter & Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+mobile/flutter/build/
+mobile/flutter/.dart_tool/
+mobile/flutter/.flutter-plugins
+mobile/flutter/.flutter-plugins-dependencies
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/app/release/
+**/android/app/debug/
+*.apk
+*.aab
+
+# Go
+backend/go/bin/
+backend/go/tmp/
+backend/go/dist/
+backend/go/.env
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+.idea/
+.vscode/
