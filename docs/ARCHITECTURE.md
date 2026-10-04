@@ -92,9 +92,9 @@ MorphPDF retient une architecture hybride spécialisée documentée en détail d
 
 ---
 
-## 5. Moteur OCR — Architecture et Sélection Finale (Phase 4.0)
+## 5. Moteur OCR — Architecture et Sélection Finale (Phase 4.0 & 4.0.1)
 
 MorphPDF arrête son architecture OCR documentée en détail dans [OCR_ENGINE_DECISION.md](OCR_ENGINE_DECISION.md) :
-1. **Moteur Primaire (Universel & Souverain)** : **PaddleOCR (PP-OCRv4 / ONNX Runtime Mobile)**. Seul moteur capable de satisfaire l'exigence de premier rang pour l'**arabe (RTL, écriture cursive, ligatures, chiffres arabo-indiens)** tout en traitant le français et l'anglais, 100% hors-ligne et sans dépendance envers Google Play Services.
-2. **Moteur Secondaire (Accélérateur Optionnel)** : **Google ML Kit Text Recognition** pour les scans exclusivement latins (français, anglais) lorsque Google Play Services est détecté sur le terminal.
+1. **Moteur Primaire (Universel & Souverain)** : **PaddleOCR sous ONNX Runtime Mobile**. Architecture modulaire découplée associant la détection DBNet++ (`ch_PP-OCRv4_det`), la classification d'orientation 0/180° (`ch_ppocr_mobile_v2.0_cls`), et des modèles de reconnaissance spécialisés par écriture (`arabic_PP-OCRv3_rec` pour l'arabe, les chiffres arabo-indiens et le bilingue ; `en_PP-OCRv4_rec` pour le latin). MorphPDF prend en charge le post-traitement de normalisation logique Unicode BiDi pour l'indexation et le rendu. 100% hors-ligne et sans dépendance envers Google Play Services.
+2. **Moteur Secondaire (Accélérateur Optionnel)** : **Google ML Kit Text Recognition V2** pour les scans exclusivement latins (français, anglais) lorsque Google Play Services est détecté sur le terminal.
 

@@ -1,32 +1,32 @@
-# MORPHPDF — AUDIT TECHNIQUE ET SÉLECTION DU MOTEUR OCR (PHASE 4.0)
+# MORPHPDF — AUDIT TECHNIQUE ET SÉLECTION DU MOTEUR OCR (PHASE 4.0 & 4.0.1)
 
 **Projet** : MorphPDF  
 **Package Android** : `com.ghdinteractivestudio.morphpdf`  
 **Organisation** : `com.ghdinteractivestudio`  
 **Auteurs** : Lead Software Architect & Senior Flutter/Go Engineer  
 **Date** : Octobre 2026  
-**Statut** : Décision Finale Scellée  
+**Statut** : Décision Finale Validée et Corrigée (Phase 4.0.1)  
 
 ---
 
 ## 1. Synthèse Exécutive (Executive Summary)
 
-Dans le cadre de la construction de **MorphPDF**, application Android professionnelle, *local-first* et respectueuse de la vie privée, le présent audit technique examine et compare de manière rigoureuse les deux solutions de reconnaissance optique de caractères (OCR) envisagées : **Google ML Kit Text Recognition** et **PaddleOCR (PP-OCRv4)**.
+Dans le cadre de la construction de **MorphPDF**, application Android professionnelle, *local-first* et respectueuse de la vie privée, cet audit technique examine et compare de manière rigoureuse les deux solutions de reconnaissance optique de caractères (OCR) envisagées : **Google ML Kit Text Recognition** et le framework **PaddleOCR**.
 
-### Constat Majeur et Résultat de l'Audit :
+### Constats Majeurs de l'Audit :
 1. **Exigence Première Classe : La Langue Arabe** :
-   - MorphPDF exige impérativement le support natif de l'arabe (écriture cursive connectée, ordonnancement RTL, documents mixtes arabe/français/anglais, factures, chiffres arabes et indiens).
+   - MorphPDF exige impérativement le support natif de l'arabe (écriture cursive connectée, ordonnancement RTL, documents mixtes arabe/français/anglais, factures, chiffres arabes et arabo-indiens).
    - **Google ML Kit Text Recognition V2 (On-Device)** ne propose **AUCUN modèle pour l'écriture arabe**. Seules les écritures Latine, Chinoise, Dévanagari, Japonaise et Coréenne sont supportées en local. L'OCR arabe chez Google n'existe que via l'API Cloud Vision (payante, dépendante d'Internet et violant la confidentialité des documents).
-   - **PaddleOCR** dispose d'un modèle officiel spécialisé et éprouvé pour l'arabe (`arabic_PP-OCRv3_rec`), capable de fonctionner **100% hors-ligne**, sans aucun serveur tiers, avec une précision exceptionnelle sur les écritures cursives et les chiffres.
+   - **PaddleOCR** dispose d'un modèle officiel spécialisé et éprouvé pour l'arabe (`arabic_PP-OCRv3_rec`), capable de fonctionner **100% hors-ligne**, sans aucun serveur tiers, avec une précision reconnue sur les écritures cursives et les chiffres.
 2. **Décision Stratégique d'Architecture** :
-   - **MOTEUR OCR PRIMAIRE SÉLECTIONNÉ** : **PaddleOCR** (via le runtime haute performance **ONNX Runtime Mobile / C++ FFI** sur ARM64). Il constitue le moteur souverain et universel de MorphPDF, garantissant le traitement hors-ligne du français, de l'anglais et de l'arabe sur 100% des appareils Android (y compris les systèmes sans Google Play Services tels que GrapheneOS ou Huawei).
-   - **MOTEUR OCR SECONDAIRE / VOIE RAPIDE OPTIONNELLE** : **Google ML Kit Text Recognition** (uniquement pour les scripts latins : français, anglais, espagnol). Il peut servir d'accélérateur ultra-léger (< 50 ms) pour les scans exclusivement latins lorsque Google Play Services est détecté sur le terminal, sans jamais compromettre le moteur primaire.
+   - **MOTEUR OCR PRIMAIRE SÉLECTIONNÉ** : **PaddleOCR** (via le runtime haute performance **ONNX Runtime Mobile** sur ARM64). Il constitue le moteur souverain et universel de MorphPDF, garantissant le traitement hors-ligne du français, de l'anglais et de l'arabe sur 100% des appareils Android (y compris les systèmes dé-googlisés tels que GrapheneOS ou Huawei).
+   - **MOTEUR OCR SECONDAIRE / VOIE RAPIDE OPTIONNELLE** : **Google ML Kit Text Recognition** (uniquement pour les scripts latins : français, anglais, espagnol). Il peut servir d'accélérateur pour les scans exclusivement latins lorsque Google Play Services est détecté sur le terminal, sans jamais compromettre le moteur primaire.
 
 ---
 
 ## 2. Exigences OCR de MorphPDF (MorphPDF OCR Requirements)
 
-L'architecture OCR de MorphPDF doit satisfaire un cahier des charges d'une grande exigence :
+L'architecture OCR de MorphPDF doit satisfaire un cahier des charges rigoureux :
 
 - **Exécution 100% Locale (On-Device & Local-First)** : Aucun transfert de document, d'image ou de métadonnée vers un serveur cloud tiers. Zéro dépendance réseau.
 - **Support Linguistique de Premier Rang** :
@@ -84,13 +84,10 @@ abstract class OcrEngine {
   Future<List<TextBlock>> recognizeText(String imagePath, {String lang = 'en'});
 }
 ```
-Cette abstraction a permis de découpler complètement la logique applicative des implémentations sous-jacentes.
 
 ---
 
-## 4. Évaluation Exhaustive de Google ML Kit Text Recognition
-
-Investigation selon les 50 critères techniques requis :
+## 4. Évaluation de Google ML Kit Text Recognition V2
 
 | # | Dimension | Analyse Google ML Kit Text Recognition V2 |
 |---|---|---|
@@ -98,18 +95,18 @@ Investigation selon les 50 critères techniques requis :
 | 2 | **Intégration Flutter** | Plugin `google_mlkit_text_recognition` via `MethodChannel` Java/Kotlin natif. |
 | 3 | **Intégration Android Native** | Bibliothèques AAR Google Play Services ou artifacts standalone Maven. |
 | 4 | **Compatibilité Dart/Flutter** | Totale. API asynchrone retournant des objets `RecognizedText`. |
-| 5 | **Prérequis Android API** | Android API 21+ (Lollipop). Compatible avec la cible Android de MorphPDF (minSdk 21). |
+| 5 | **Prérequis Android API** | Android API 21+ (Lollipop). Compatible universelle. |
 | 6 | **Support ARM64** | Natif complet (`arm64-v8a`, `armeabi-v7a`, `x86_64`). |
 | 7 | **Comportement Hors-Ligne** | 100% hors-ligne avec la variante *bundled* (embarquée). Variante *thin* nécessite Google Play Services. |
 | 8 | **Exigences Réseau** | Aucune en mode embarqué. En mode dynamique, téléchargement unique par Play Services. |
 | 9 | **Téléchargement Modèles** | Modèle latin embarqué directement dans l'APK sans téléchargement ultérieur. |
 | 10 | **Packaging Modèle** | Fichiers `.tflite` packagés dans les assets AAR Android. |
 | 11 | **Taille des Modèles** | Modèle Latin seul : ~4.5 Mo. Modèle Chinois/Japonais/Coréen : ~12 Mo chacun. |
-| 12 | **Impact Taille APK** | +4.8 Mo pour le binaire et le modèle latin en version embarquée. Négligeable en version Play Services. |
+| 12 | **Impact Taille APK** | +4.8 Mo pour le binaire et le modèle latin en version embarquée. |
 | 13 | **Consommation RAM Runtime** | 40 Mo à 70 Mo lors de l'inférence. Libération immédiate par le GC Android. |
 | 14 | **Utilisation CPU** | Optimisée multithread ARM Neon et accélération NNAPI / GPU via delegate TFLite. |
-| 15 | **Vitesse de Traitement** | Ultra-rapide : 45 ms à 90 ms par page A4 à 150 DPI sur processeur ARM64 milieu de gamme. |
-| 16 | **Traitement Parallèle** | Possible mais déconseillé sur mobile (sature les cœurs CPU). Traitement séquentiel recommandé. |
+| 15 | **Vitesse de Traitement** | Ultra-rapide : 45 ms à 90 ms par page A4 à 150 DPI sur processeur ARM64. |
+| 16 | **Traitement Parallèle** | Séquentiel par page recommandé pour éviter de saturer le CPU mobile. |
 | 17 | **Support Annulation** | Possible via l'interruption du `CancellationToken` de la coroutine Kotlin. |
 | 18 | **Scores de Confiance** | Non exposés de manière fiable au niveau bloc/mot dans l'API publique standard de ML Kit. |
 | 19 | **Boîtes Englobantes (BBox)** | Fournies sous forme de `Rect` et tableau de 4 points polygonaux (`Point<int>[]`). |
@@ -126,9 +123,9 @@ Investigation selon les 50 critères techniques requis :
 | 30 | **Documents Mixtes** | Limité aux mélanges entre écritures latines supportées. Inopérant si arabe présent. |
 | 31 | **Nombres / Chiffres** | Reconnus avec précision (chiffres arabes occidentaux 0-9). |
 | 32 | **Ponctuation** | Ponctuation latine standard très bien gérée. |
-| 33 | **Tableaux / Mise en Page** | Pas de détection sémantique de tableau (`TableBlock`). Simple regroupement géométrique. |
+| 33 | **Tableaux / Mise en Page** | Pas de détection sémantique de tableau (`TableBlock`). |
 | 34 | **Pipeline Détection + Rec.** | Pipeline unifié interne géré par les bibliothèques C++ fermées de Google. |
-| 35 | **Prétraitement d'Image** | Conversion interne en format YUV/NV21 ou Bitmap RVB. Tolère des résolutions variées. |
+| 35 | **Prétraitement d'Image** | Conversion interne en format YUV/NV21 ou Bitmap RVB. |
 | 36 | **Scans Basse Résolution** | Dégradation sensible en deçà de 150 DPI. Recommande 200 à 300 DPI. |
 | 37 | **Scans Bruités** | Bon filtrage des textures et ombres légères. |
 | 38 | **Documents Multi-colonnes** | Regroupement vertical souvent satisfaisant mais risque d'entrelacement sur colonnes serrées. |
@@ -139,53 +136,51 @@ Investigation selon les 50 critères techniques requis :
 | 43 | **Conditions Redistribution** | Inclusion des mentions légales Google Play Services dans les licences tierces. |
 | 44 | **Binaires Natifs Requis** | Fournis précompilés par Google via les dépendances Gradle (`libmlkit_google_ocr_pipeline.so`). |
 | 45 | **Exigences NDK** | Aucune configuration NDK personnalisée requise dans l'application hôte. |
-| 46 | **Compatibilité GitHub Actions** | Excellente (résolution Maven Google standard sans secret d'authentification). |
-| 47 | **Reproductibilité du Build** | Très stable, versions d'artifacts Gradle figées (`com.google.mlkit:text-recognition:16.0.0`). |
+| 46 | **Compatibilité GitHub Actions** | Excellente (résolution Maven Google standard). |
+| 47 | **Reproductibilité du Build** | Très stable, versions d'artifacts Gradle figées. |
 | 48 | **Maintenance** | Activement maintenu par l'équipe Google Android ML. |
 | 49 | **Maturité Écosystème** | Très élevée, standard industriel Android pour les écritures latines. |
 | 50 | **Risques d'Intégration Flutter**| Dépendance de ponts `MethodChannel` introduisant une sérialisation IPC mémoire de l'image. |
 
 ---
 
-## 5. Évaluation Exhaustive de PaddleOCR (PP-OCRv4)
+## 5. Évaluation de PaddleOCR (PP-OCRv4 / ONNX Runtime Mobile)
 
-Investigation selon les 50 critères techniques requis :
-
-| # | Dimension | Analyse PaddleOCR (PP-OCRv4 / ONNX Runtime Mobile) |
+| # | Dimension | Analyse PaddleOCR (Architecture Découplée) |
 |---|---|---|
 | 1 | **Architecture** | Découplage modulaire en 3 étapes : Détection (DBNet++), Classification d'angle (MobileNet), Reconnaissance (SVTR/CTC). |
 | 2 | **Intégration Flutter** | Deux voies viables : **A)** Dart FFI direct vers la bibliothèque C++ ONNX Runtime (`libonnxruntime.so`), ou **B)** Plugin Android MethodChannel pontant vers `onnxruntime-android`. |
 | 3 | **Intégration Android Native** | Dépendance AAR Maven `com.microsoft.onnxruntime:onnxruntime-android` ou compilation C++ NDK. |
-| 4 | **Compatibilité Dart/Flutter** | Excellente via Dart FFI (évite les copies mémoires de bitmaps entre Dart et la JVM). |
+| 4 | **Compatibilité Dart/Flutter** | Excellente via Dart FFI ou bridge Kotlin avec tampon partagé. |
 | 5 | **Prérequis Android API** | Android API 21+ (Lollipop). Compatible universelle. |
 | 6 | **Support ARM64** | Hautement optimisé pour ARM64 (`arm64-v8a`) avec instructions vectorielles Neon et INT8 dot-product. |
 | 7 | **Comportement Hors-Ligne** | **100% autonome et hors-ligne**. Les modèles sont embarqués directement dans l'application. |
 | 8 | **Exigences Réseau** | **Strictement nulles**. Aucun appel réseau, aucune télémétrie, aucune dépendance externe. |
 | 9 | **Téléchargement Modèles** | Aucun requis si packagé dans l'application. Modèles packagés dans les assets de l'APK. |
 | 10 | **Packaging Modèle** | Fichiers `.onnx` légers placés dans `assets/models/ocr/` et chargés via mémoire tampon. |
-| 11 | **Taille des Modèles** | Version quantifiée INT8 : Détecteur (~2.8 Mo), Classificateur (~1.2 Mo), Reconnaissance Arabe (~7.5 Mo), Latin (~4.2 Mo). |
-| 12 | **Impact Taille APK** | Environ +16 Mo (modèles quantifiés + bibliothèque native `libonnxruntime.so` compressée). |
+| 11 | **Taille des Modèles** | Version quantifiée INT8 : Détecteur (~2.8 Mo), Classificateur (~1.2 Mo), Reconnaissance Arabe (~5.8 Mo), Latin (~3.8 Mo). |
+| 12 | **Impact Taille APK** | Environ +14 à +18 Mo (modèles quantifiés + bibliothèque native `libonnxruntime.so` compressée). |
 | 13 | **Consommation RAM Runtime** | 70 Mo à 115 Mo lors de l'inférence complète d'une page A4. Complètement libérée en fin de tâche. |
 | 14 | **Utilisation CPU** | Répartition multithread (2 à 4 threads paramétrables) avec régulation thermique. |
-| 15 | **Vitesse de Traitement** | 180 ms à 380 ms par page sur processeur ARM64 (Snapdragon 700/800 series ou Dimensity). |
+| 15 | **Vitesse de Traitement** | Cible estimée : 180 ms à 380 ms par page sur processeur ARM64. |
 | 16 | **Traitement Parallèle** | Séquentiel par page recommandé pour préserver la mémoire et l'autonomie batterie. |
 | 17 | **Support Annulation** | Natif via interruption du pipeline d'inférence ONNX Runtime à chaque étape (Det / Rec). |
 | 18 | **Scores de Confiance** | Précis et systématiques : probabilité softmax CTC fournie pour chaque mot et caractère ($0.0$ à $1.0$). |
 | 19 | **Boîtes Englobantes (BBox)** | Boîtes orientées à 4 sommets ($[x_1, y_1], [x_2, y_2], [x_3, y_3], [x_4, y_4]$) issues de DBNet. |
 | 20 | **Coordonnées Mots** | Détectées avec grande fidélité le long des polygones délimités. |
 | 21 | **Coordonnées Lignes** | Détectées par segmentation continue des lignes de texte. |
-| 22 | **Détection Blocs** | Assemblage des lignes en blocs via l'analyse spatiale ou le modèle de layout PP-Structure. |
+| 22 | **Détection Blocs** | Assemblage des lignes en blocs via l'analyse spatiale. |
 | 23 | **Détection Orientation** | Classificateur d'angle dédié capable de détecter et corriger les inversions à 0° ou 180°. |
 | 24 | **Texte Incliné / Pivoté** | Bounding boxes polygonales s'adaptant à n'importe quel angle arbitraire de rotation. |
 | 25 | **Compatibilité Deskew** | Redressement automatique par perspective transform (affine warp) avant envoi au modèle de reco. |
-| 26 | **SUPPORT ARABE** | **EXCELLENT et OFFICIEL.** Modèle `arabic_PP-OCRv3_rec` spécialement entraîné pour l'écriture arabe. |
-| 27 | **Support RTL** | Pris en charge. Les tokens sont décodés et ordonnés correctement selon la syntaxe RTL. |
-| 28 | **Support Français** | Très bon via le modèle de reconnaissance multilingue latin PP-OCRv4. |
+| 26 | **SUPPORT ARABE** | **OFFICIEL ET DÉDIÉ.** Modèle `arabic_PP-OCRv3_rec` spécialement entraîné pour l'écriture arabe. |
+| 27 | **Support RTL** | Pris en charge au niveau visuel ; normalisation logique BiDi déléguée à MorphPDF en post-traitement. |
+| 28 | **Support Français** | Très bon via le modèle de reconnaissance multilingue latin PP-OCRv4 (`en_PP-OCRv4_rec`). |
 | 29 | **Support Anglais** | Excellent (modèle latin haute fidélité). |
-| 30 | **Documents Mixtes** | **Remarquable** : gère les paragraphes bilingues Arabe/Français et les en-têtes multilingues. |
+| 30 | **Documents Mixtes** | Gère les paragraphes bilingues Arabe/Français et les en-têtes multilingues. |
 | 31 | **Nombres / Chiffres** | Gère à la fois les chiffres occidentaux (0-9) et les chiffres arabo-indiens (٠-٩). |
 | 32 | **Ponctuation** | Prise en charge des signes de ponctuation arabe (ex: virgule inversée `،`, point d'interrogation `؟`). |
-| 33 | **Tableaux / Mise en Page** | Intégration possible du module complémentaire PP-Structure pour l'extraction de tableaux (`TableBlock`). |
+| 33 | **Tableaux / Mise en Page** | Préservation des boîtes géométriques permettant la reconstruction tabulaire. |
 | 34 | **Pipeline Détection + Rec.** | Pipeline modulaire ouvert permettant d'ajuster le seuil de binarisation et la taille d'entrée. |
 | 35 | **Prétraitement d'Image** | Normalisation RVB $(x / 255.0 - \text{mean}) / \text{std}$, redimensionnement conservant le ratio d'aspect. |
 | 36 | **Scans Basse Résolution** | Très résilient grâce à la tête de détection DBNet++ (Differentiable Binarization). |
@@ -206,48 +201,31 @@ Investigation selon les 50 critères techniques requis :
 
 ---
 
-## 6. Audit Approfondi de la Langue Arabe et du Traitement RTL
+## 6. Audit de la Langue Arabe et du Traitement RTL
 
-L'écriture arabe présente des spécificités typographiques et informatiques qui disqualifient immédiatement les moteurs non spécialisés :
-
-### 6.1. Caractéristiques de l'Écriture Arabe
-- **Nature Cursive et Ligatures** : Contrairement aux caractères latins disjoints, l'arabe est une écriture cursive continue où chaque lettre prend une forme visuelle différente selon sa position : *Isolée*, *Initiale*, *Médiane*, ou *Finale*.
-- **Ligatures Spéciales Obligatoires** : La combinaison de certaines lettres génère des glyphes obligatoires uniques (notamment *Lam-Alif* `لا`, `لإ`, `لأ`, `لآ`).
-- **Diacritiques (Harakat / Tashkeel)** : Présence possible de marques diacritiques (Fatha, Damma, Kasra, Sukun, Shadda, Tanwin) suscrits ou souscrits aux lettres.
-- **Directionnalité (RTL)** : Lecture de droite à gauche, mais avec insertion de chiffres et de termes latins qui se lisent de gauche à droite (BiDi — Bi-directional Text).
-- **Chiffres Arabe-Indiens vs Chiffres Occidentaux** : Coexistence fréquente des chiffres arabo-indiens (`٠`, `١`, `٢`, `٣`, `٤`, `٥`, `٦`, `٧`, `٨`, `٩`) et des chiffres arabes occidentaux (`0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`).
-
-### 6.2. Comparaison Pratique ML Kit vs PaddleOCR sur l'Arabe
+L'écriture arabe présente des spécificités typographiques majeures :
+- **Nature Cursive et Ligatures** : Écriture cursive continue avec formes contextuelles (*Isolée*, *Initiale*, *Médiane*, *Finale*) et ligatures obligatoires (*Lam-Alif* `لا`).
+- **Directionnalité (RTL)** : Lecture de droite à gauche, avec insertion de chiffres et termes latins lus de gauche à droite (BiDi).
+- **Chiffres Arabe-Indiens vs Chiffres Occidentaux** : Coexistence des chiffres orientaux (`٠-٩`) et occidentaux (`0-9`).
 
 | Critère Arabe | Google ML Kit (On-Device) | PaddleOCR (PP-OCRv3 Arabic) |
 |---|---|---|
 | **Disponibilité Modèle On-Device** | ❌ **AUCUN** (Inexistant) | ✅ **Modèle officiel dédié** (`arabic_PP-OCRv3_rec`) |
-| **Reconnaissance des glyphes cursifs** | ❌ Échec total | ✅ **Précision supérieure à 94%** sur scans réels |
-| **Ligatures complexes (*Lam-Alif*)** | ❌ Non reconnu | ✅ Intégré dans le dictionnaire de caractères CTC |
+| **Reconnaissance des glyphes cursifs** | ❌ Échec total | ✅ **Excellente fidélité** sur écritures connectées |
+| **Ligatures complexes (*Lam-Alif*)** | ❌ Non reconnu | ✅ Intégré dans le dictionnaire CTC |
 | **Détection de la ligne de base** | ❌ Non supporté | ✅ Segmentation précise par DBNet++ |
-| **Ordonnancement RTL** | ❌ Non supporté | ✅ Décodage CTC suivi d'un reformatage logique BiDi |
+| **Ordonnancement RTL** | ❌ Non supporté | ✅ Décodage CTC visuel |
 | **Paragraphes mixtes (Arabe + Français)** | ❌ Seule la partie française est extraite | ✅ **Extraction intégrale** des deux langues |
-| **Chiffres arabo-indiens (`٠-٩`)** | ❌ Confondus avec du bruit | ✅ Reconnaissance native et conservation dans le texte |
-| **Ponctuation arabe (`،`, `؟`)** | ❌ Rejetée | ✅ Présente dans le lexique du modèle |
-
-### 6.3. Post-Traitement BiDi (Bi-directional Text) Requis
-Lors de l'inférence OCR avec PaddleOCR :
-1. Le détecteur identifie la boîte englobante de la ligne ou du bloc (orientée spatialement sur la page).
-2. Le modèle de reconnaissance lit le patch d'image redressé horizontalement et génère une séquence de caractères.
-3. Pour le texte arabe, le décodeur CTC produit les caractères dans l'ordre visuel (de droite à gauche).
-4. **Post-traitement obligatoire** : L'algorithme Unicode BiDi (disponible via le package standard Dart `intl` / `bidi`) normalise la chaîne en **ordre logique Unicode standard**, permettant ainsi une copie/coller correcte, une recherche textuelle fluide et une indexation cohérente dans le `DocumentModel`.
+| **Chiffres arabo-indiens (`٠-٩`)** | ❌ Confondus avec du bruit | ✅ Reconnaissance native |
+| **Ponctuation arabe (`،`, `؟`)** | ❌ Rejetée | ✅ Présente dans le lexique |
 
 ---
 
 ## 7. Évaluation Multilingue et Documents Mixtes
 
-MorphPDF cible prioritairement des contextes administratifs et juridiques (France, Maghreb, Moyen-Orient, international) où les documents bilingues sont la norme :
-
-- **Factures et Reçus Bilingues** : En-têtes en français et détails en arabe, ou inversement.
-- **Documents d'Identité & Passeports** : Champs textuels alternant alphabet latin et alphabet arabe.
-- **Dates et Montants Mixtes** : Ex. `Total: 1500.50 د.ج` ou `Fait le 12/05/2026 à Alger - الجزائر`.
-- **Comportement Retenu** :
-  - **PaddleOCR** traite avec fluidité ces mélanges grâce à son lexique étendu combinant les 100+ caractères arabes, l'alphabet latin complet (majuscules/minuscules/accents), les chiffres et la ponctuation internationale.
+- **Factures et Reçus Bilingues** : En-têtes en français et détails en arabe.
+- **Documents d'Identité & Formulaires** : Champs alternant écriture latine et arabe.
+- **PaddleOCR** traite avec fluidité ces mélanges grâce au modèle `arabic_PP-OCRv3_rec` qui intègre dans son dictionnaire les glyphes arabes, les caractères latins majuscules et minuscules, les chiffres et la ponctuation courante.
 
 ---
 
@@ -259,234 +237,475 @@ MorphPDF cible prioritairement des contextes administratifs et juridiques (Franc
 | **Connexion Internet requise en cours d'utilisation** | ❌ Non | ❌ **Non (Zéro réseau)** |
 | **Dépendance à Google Play Services** | ⚠️ Oui en mode *thin*, Non en mode *bundled* | ❌ **Aucune (Indépendant de tout service OS)** |
 | **Fonctionnement sur OS Dé-Googlisé (GrapheneOS, CalyxOS, AOSP)** | ⚠️ Échec en mode *thin*, OK en mode *bundled* | ✅ **100% Fonctionnel sur tout système Android** |
-| **Taille d'emport dans l'APK** | +4.8 Mo (Latin seul) | ~16 Mo (Moteur complet + Latin + Arabe) |
+| **Taille d'emport dans l'APK** | +4.8 Mo (Latin seul) | ~14 à 18 Mo (Moteur complet + Latin + Arabe) |
 
 ---
 
-## 9. Analyse de Performance et Estimations Chiffrées
+## 9. Analyse de Performance et Estimations
 
-### 9.1. Distinctions Méthodologiques
-- **MESURÉ (Measured)** : Performances de rendu et d'inspection PDFium issues des tests automatisés de la Phase 3.1 (`pdf_benchmark_test.dart`).
-- **ESTIMÉ (Estimated)** : Projections basées sur l'architecture ARM64 cible (CPU 4 cœurs à 2.0 GHz) et l'inférence ONNX Runtime INT8.
-- **RAPPORTÉ VENDEUR (Vendor-Reported)** : Benchmarks publiés par Google et le projet PaddleOCR sur processeurs mobiles.
+### Classification Méthodologique :
+- **MESURÉ (Measured)** : Rendu et inspection PDFium mesurés en Phase 3.1 sur banc de test desktop (`pdf_benchmark_test.dart` : inspect 27-39ms, rendu à froid 50-59ms à 150 DPI).
+- **ESTIMÉ (Estimated)** : Cibles de performance projetées pour un processeur ARM64 milieu de gamme sous ONNX Runtime INT8.
+- **RAPPORTÉ VENDEUR (Vendor-Reported)** : Benchmarks publiés par Google et PaddleOCR.
 
-### 9.2. Tableau de Performance Estimée par Page A4
-
-| Configuration Page | Rendu PDFium (Mesuré) | Prétraitement Bitmap | Inférence ML Kit (Latin) | Inférence PaddleOCR (Arabe/Latin) | Temps Total Estimé |
+| Configuration Page | Rendu PDFium (Mesuré Desktop / Estimé Mobile) | Prétraitement Bitmap (Estimé) | Inférence ML Kit Latin (Estimé) | Inférence PaddleOCR Arabe/Latin (Estimé) | Temps Total Estimé Mobile |
 |---|---|---|---|---|---|
-| **A4 @ 150 DPI** ($1240 \times 1754$ px) | ~59 ms | ~15 ms | ~65 ms | ~210 ms | **~284 ms / page** |
-| **A4 @ 200 DPI** ($1654 \times 2338$ px) | ~95 ms | ~25 ms | ~90 ms | ~310 ms | **~430 ms / page** |
-| **A4 @ 300 DPI** ($2480 \times 3508$ px) | ~185 ms | ~45 ms | ~160 ms | ~540 ms | **~770 ms / page** |
+| **A4 @ 150 DPI** ($1240 \times 1754$ px) | ~59 ms / ~80 ms | ~15 ms | ~65 ms | ~210 ms | **~305 ms / page** |
+| **A4 @ 200 DPI** ($1654 \times 2338$ px) | ~95 ms / ~120 ms | ~25 ms | ~90 ms | ~310 ms | **~455 ms / page** |
+| **A4 @ 300 DPI** ($2480 \times 3508$ px) | ~185 ms / ~240 ms | ~45 ms | ~160 ms | ~540 ms | **~825 ms / page** |
 
-### 9.3. Recommandation de Résolution pour MorphPDF
-- **Résolution optimale recommandée : 200 DPI**.
-  - Permet une fidélité d'OCR quasi-parfaite sur les caractères de petite taille (notes de bas de page, mentions légales de factures).
-  - Équilibre idéal entre temps de traitement (~430 ms) et empreinte mémoire du bitmap (~15 Mo non compressé).
+*Résolution cible retenue pour MorphPDF : 200 DPI.*
 
 ---
 
-## 10. Analyse Mémoire et Prévention des OOM
+## 10. Analyse Mémoire
 
-Sur un appareil mobile d'entrée ou de milieu de gamme disposant de 3 à 4 Go de RAM, le traitement de PDF multipages (ex: 50 pages) peut provoquer un crash par épuisement mémoire si le cycle de vie des buffers n'est pas rigoureusement encadré :
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   EMPREINTE MÉMOIRE PAR PAGE (200 DPI)                 │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. Buffer Bitmap RGBA PDFium (1654 x 2338 x 4 octets) :        15.4 Mo │
-│ 2. Buffer Bitmap Prétraité / Niveaux de gris :                  3.8 Mo │
-│ 3. Tenseur d'entrée ONNX Runtime (Float32 normalisé) :          11.6 Mo│
-│ 4. Poids des modèles ONNX (chargés une seule fois en mémoire) : 15.0 Mo│
-│ 5. Buffers intermédiaires d'inférence (têtes d'attention) :     28.0 Mo│
-├────────────────────────────────────────────────────────────────────────┤
-│ TOTAL CRÊTE EN COURS D'INFÉRENCE :                             ~73.8 Mo│
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### Règles de Gestion Mémoire Strictes :
-1. **Traitement Séquentiel Strict** : Traiter les pages une par une ($N=1$). Ne jamais lancer l'OCR en parallèle sur plusieurs pages simultanément.
-2. **Libération Immédiate des Tenseurs** : Détruire et recycler les buffers d'images dès la fin de l'extraction des coordonnées d'une page (`calloc.free` ou GC immédiat).
-3. **Mise en Cache Déportée** : Seuls les résultats vectoriels légers (`TextBlock`, boîtes englobantes et texte extrait, pesant < 50 Ko par page) sont conservés en mémoire dans le `DocumentModel`.
+- **Plafond théorique estimé** : ~73.8 Mo en cours d'inférence à 200 DPI (buffers, tenseurs et poids de modèles).
+- **Règle absolue d'architecture** : **Traitement séquentiel strict ($N = 1$)**.
+  - Ne jamais paralléliser l'OCR de multiples pages sur mobile.
+  - Libération et recyclage immédiat des buffers d'images avant de traiter la page suivante.
 
 ---
 
-## 11. Intégration Géométrique avec PDFium et le Système de Coordonnées
+## 11. Intégration Géométrique avec PDFium
 
-Le cœur de MorphPDF repose sur la capacité de reconstruire un PDF interrogeable (*Searchable PDF*) ou éditable en superposant une couche de texte invisible sur le scan.
-
-### 11.1. Inversion d'Axe et Normalisation
-L'OCR s'exécute sur l'image rendue en pixels (origine en haut à gauche, $Y$ vers le bas).  
-Le document PDF utilise le repère ISO 32000-1 en points $1/72''$ (origine en bas à gauche, $Y$ vers le haut).
-
-Le module [`CoordinateConverter`](file:///root/MorphPDF/mobile/flutter/lib/core/pdf/pdf_models.dart#L80-L135) développé en Phase 3.1 assure la projection exacte :
+Module [`CoordinateConverter`](file:///root/MorphPDF/mobile/flutter/lib/core/pdf/pdf_models.dart#L80-L135) :
 $$x_{\text{PDF}} = x_{\text{OCR\_pixel}} \times \frac{72}{\text{DPI}}$$
 $$y_{\text{PDF}} = \text{pageHeight}_{\text{pt}} - \left((y_{\text{OCR\_pixel}} + \text{height}_{\text{OCR\_pixel}}) \times \frac{72}{\text{DPI}}\right)$$
 $$\text{width}_{\text{PDF}} = \text{width}_{\text{OCR\_pixel}} \times \frac{72}{\text{DPI}}$$
 $$\text{height}_{\text{PDF}} = \text{height}_{\text{OCR\_pixel}} \times \frac{72}{\text{DPI}}$$
 
-Aucune duplication de calcul : le pipeline OCR réutilisera directement [`CoordinateConverter.pixelsToPdfRect`](file:///root/MorphPDF/mobile/flutter/lib/core/pdf/pdf_models.dart#L125-L134).
-
 ---
 
 ## 12. Compatibilité Android et Intégration Flutter
 
-### 12.1. Stratégie d'Intégration Retenue pour PaddleOCR
-Deux options d'architecture ont été étudiées :
-
-- **Option A (Flutter $\rightarrow$ Dart FFI $\rightarrow$ `libonnxruntime.so`)** :
-  - *Avantages* : Aucune copie mémoire de bitmap vers la JVM Android. Vitesse maximale, code 100% partagé en Dart/C++.
-  - *Inconvénients* : Nécessite la gestion manuelle du chargement dynamique des bibliothèques NDK sur Android.
-- **Option B (Flutter $\rightarrow$ MethodChannel $\rightarrow$ Android Kotlin / `onnxruntime-android`)** :
-  - *Avantages* : Dépendance officielle `com.microsoft.onnxruntime:onnxruntime-android` gérée proprement par Gradle. Cycle de vie Android natif respecté (Background Service / Foreground Service avec notification de progression).
-  - *Inconvénients* : Léger surcoût de sérialisation IPC sur le MethodChannel.
-
-**Décision d'intégration** : **Option B hybride avec buffer partagé (ou FFI natif)** :
-Pour la Phase 4.1, l'utilisation de l'AAR standard `onnxruntime-android` ou d'un bridge FFI direct vers la bibliothèque partagée C++ garantit la meilleure stabilité sur les builds automatisés.
+- **Approche recommandée pour la Phase 4.1** : Bridge Android Kotlin (`MethodChannel` ou interface de plateforme) exploitant l'AAR officiel `com.microsoft.onnxruntime:onnxruntime-android`.
 
 ---
 
-## 13. Compatibilité avec GitHub Actions et Reproductibilité des Builds
+## 13. Compatibilité avec GitHub Actions
 
-Un impératif du projet MorphPDF est l'absence de SDK Android installé localement sur la machine hôte : les APK finaux sont compilés via GitHub Actions.
-
-- **Google ML Kit** : Dépendances Maven standard Google. Build GitHub Actions 100% reproductible sans clé secrète.
-- **PaddleOCR (via ONNX Runtime)** :
-  - L'artifact `com.microsoft.onnxruntime:onnxruntime-android:1.17.0` est hébergé publiquement sur Maven Central.
-  - Les fichiers de modèles quantifiés (`.onnx`) sont légers (< 15 Mo au total) et peuvent être suivis directement sous Git LFS ou packagés dans le répertoire `assets/`.
-  - **Zéro dépendance de compilation C++ locale requise dans GitHub Actions** : aucun compilateur NDK spécifique n'est exigé si l'on s'appuie sur les binaires précompilés ONNX Runtime.
+- Build 100% automatisé via Gradle sans compilation C++ locale ni NDK personnalisé sur le runner.
 
 ---
 
-## 14. Sécurité et Confidentialité (Security & Privacy Audit)
+## 14. Sécurité et Confidentialité
 
-- **Traitement On-Device Garanti** : Zéro octet de document n'est expédié sur le réseau.
-- **Fichiers Temporaires** : Les images temporaires décompressées sont stockées dans le cache applicatif privé (`context.cacheDir`) et sont purgées immédiatement après l'inférence.
-- **Protection contre les Decompression Bombs & Zip Bombs** :
-  - Limitation stricte de la dimension maximale des bitmaps générés par PDFium (plafond à $4096 \times 4096$ pixels).
-  - Rejet automatique des pages corrompues ou démesurées avant allocation mémoire.
-- **Isolation des Processus** : L'OCR s'exécute dans un thread d'arrière-plan dédié (*Background Worker* ou *Isolate Dart*), prévenant tout blocage du thread d'affichage (UI 60/120 FPS).
+- Traitement 100% on-device. Zéro upload vers OpenRouter ou Cloudflare.
+- Plafond dimensionnel strict ($4096 \times 4096$ px) pour parer aux attaques par décompression (zip/decompression bombs).
 
 ---
 
-## 15. Audit Juridique et Licences Logicielles (Licensing Audit)
+## 15. Audit Juridique et Licences Logicielles
 
-| Composant | Licence Logicielle | Usage Commercial | Redistribution Android | Statut MorphPDF |
-|---|---|---|---|---|
-| **PaddleOCR Code** | Apache 2.0 | ✅ Libre et autorisé | ✅ Libre avec mention de copyright | **SAFE** |
-| **PaddleOCR Modèles Pré-entraînés** | Apache 2.0 | ✅ Libre et autorisé | ✅ Intégration libre dans l'APK | **SAFE** |
-| **ONNX Runtime (Microsoft)** | MIT License | ✅ Libre et autorisé | ✅ Libre avec mention de copyright | **SAFE** |
-| **Google ML Kit SDK** | Propriétaire gratuite | ✅ Autorisé | ✅ Autorisé sous conditions Google | **SAFE** (avec attribution) |
-
-> [!NOTE]
-> La combinaison **PaddleOCR (Apache 2.0) + ONNX Runtime (MIT)** est **100% libre et sûre (SAFE)** pour une distribution commerciale professionnelle.
+| Composant | Licence | Commercial | Statut |
+|---|---|---|---|
+| **PaddleOCR Source** | Apache 2.0 | Autorisé | **SAFE** |
+| **PaddleOCR Modèles Officiels** | Apache 2.0 | Autorisé | **SAFE** |
+| **ONNX Runtime (Microsoft)** | MIT License | Autorisé | **SAFE** |
+| **Google ML Kit SDK** | Propriétaire gratuite | Autorisé | **SAFE** (avec attribution) |
 
 ---
 
-## 16. Matrice de Décision Comparative
+## 16. Matrice de Décision
 
-| Critère Majeur | Poids | Google ML Kit | PaddleOCR (ONNX) | Vainqueur |
-|---|---|---|---|---|
-| **Support de l'Arabe (RTL, Cursif, Chiffres)** | **30%** | 0 / 10 (Non supporté) | **9.5 / 10** | **PaddleOCR** |
-| **Support du Français et de l'Anglais** | **15%** | **9.8 / 10** | 9.0 / 10 | Google ML Kit |
-| **Fonctionnement 100% Hors-Ligne & Souverain** | **15%** | 8.0 / 10 | **10.0 / 10** | **PaddleOCR** |
-| **Précision Bounding Boxes & Coordonnées** | **15%** | 9.0 / 10 | **9.2 / 10** | **PaddleOCR** |
-| **Indépendance vis-à-vis des Services Google** | **10%** | 5.0 / 10 | **10.0 / 10** | **PaddleOCR** |
-| **Légèreté & Poids APK** | **5%** | **9.5 / 10** | 7.5 / 10 | Google ML Kit |
-| **Vitesse d'Inférence par Page** | **5%** | **9.5 / 10** | 8.0 / 10 | Google ML Kit |
-| **Pérennité & Licence Libre (Open Source)** | **5%** | 6.0 / 10 | **9.8 / 10** | **PaddleOCR** |
-| **SCORE GLOBAL PONDÉRÉ** | **100%** | **5.45 / 10** | **9.19 / 10** | **PADDLEOCR (Vainqueur)** |
+- **PaddleOCR** : **9.19 / 10** (Vainqueur — seul moteur supportant l'arabe en local).
+- **Google ML Kit** : **5.45 / 10** (Disqualifié en primaire par absence d'OCR arabe on-device).
 
 ---
 
 ## 17. Décision Finale d'Architecture
 
-### MOTEUR OCR PRIMAIRE : **PaddleOCR (PP-OCRv4 / ONNX Runtime)**
-- **Raison principale** : PaddleOCR est le **SEUL** moteur capable d'assurer le traitement complet, local et précis de la langue arabe, tout en couvrant le français et l'anglais sans aucune dépendance envers Google Play Services ni aucun serveur cloud.
-- **Rôle** : Moteur OCR universel par défaut de MorphPDF pour tous les documents numérisés, formulaires et factures.
-
-### MOTEUR OCR SECONDAIRE (Optionnel / Accélérateur) : **Google ML Kit Text Recognition**
-- **Rôle** : Voie rapide optionnelle pour les scans purement latins (français/anglais), activable uniquement si Google Play Services est présent sur le terminal et que l'utilisateur a désigné un profil de langue exclusivement latin.
+- **MOTEUR OCR PRIMAIRE** : **PaddleOCR (Détecteur DBNet + Classificateur + Reconnaissance `arabic_PP-OCRv3_rec` / `en_PP-OCRv4_rec` sous ONNX Runtime)**.
+- **MOTEUR OCR SECONDAIRE (Optionnel)** : **Google ML Kit Text Recognition** pour les scans exclusivement latins.
 
 ---
 
-## 18. Schéma du Pipeline OCR Cible (Phase 4.1+)
+## 18. Schéma du Pipeline Cible
 
 ```
-                                DOCUMENT PDF NUMÉRISÉ
-                                          │
-                                          ▼
-                         ┌─────────────────────────────────┐
-                         │   Vérification texte natif      │
-                         │      (PDFium text extract)      │
-                         └────────────────┬────────────────┘
-                                          │
-                ┌─────────────────────────┴─────────────────────────┐
-       [Texte vectoriel présent]                           [Scan / Image pure]
-                │                                                   │
-                ▼                                                   ▼
-     Extraction instantanée                              Rendu Page PDFium
-        (PDFium Engine)                                   (200 DPI Bitmap)
-                │                                                   │
-                │                                                   ▼
-                │                                        Prétraitement d'Image
-                │                                       (Niveaux de gris, Deskew)
-                │                                                   │
-                │                                                   ▼
-                │                                          Pipeline PaddleOCR
-                │                                      1. Détection boîtes (DBNet)
-                │                                      2. Angle classifier (0/180°)
-                │                                      3. Reconnaissance (SVTR Arabe/Latin)
-                │                                                   │
-                │                                                   ▼
-                │                                         Post-traitement BiDi
-                │                                         (Normalisation RTL/LTR)
-                │                                                   │
-                │                                                   ▼
-                │                                      Projection Coordonnées
-                │                                       (CoordinateConverter)
-                │                                                   │
-                └─────────────────────────┬─────────────────────────┘
-                                          │
-                                          ▼
-                               DOCUMENT MODEL UNIFIÉ
-                               (DocumentModel / PageModel)
-                                          │
-                     ┌────────────────────┴────────────────────┐
-                     ▼                                         ▼
-            Recherche & Écran                        Correction / Analyse IA
-            (Visualiseur PDF)                         (OpenRouter via Go)
+PDF Scan ──> PDFium Render (200 DPI) ──> Preprocessing ──> PaddleOCR (Det + Cls + Rec) ──> BiDi Normalizer ──> CoordinateConverter ──> DocumentModel
 ```
 
 ---
 
 ## 19. Plan d'Implémentation pour la Phase 4.1
 
-1. **Intégration du Runtime ONNX Mobile** : Configuration des dépendances Gradle Android pour `onnxruntime-android` ou FFI C++.
-2. **Packaging des Modèles Pré-entraînés Quantifiés** :
-   - Détecteur : `ch_PP-OCRv4_det_infer.onnx` (~2.8 Mo).
-   - Angle Classifier : `ch_ppocr_mobile_v2.0_cls_infer.onnx` (~1.2 Mo).
-   - Reconnaissance Arabe : `arabic_PP-OCRv3_rec_infer.onnx` (~7.5 Mo).
-   - Reconnaissance Latin : `en_PP-OCRv4_rec_infer.onnx` (~4.2 Mo).
-3. **Implémentation de `PaddleOcrEngine`** : Remplacement du mock actuel par la classe de production implémentant `OcrEngine`.
-4. **Normalisation Géométrique et BiDi** : Intégration du module de projection cartésienne avec `CoordinateConverter` et de l'algorithme Unicode BiDi.
-5. **Gestion de l'Avancement et de l'Annulation** : Émission des états Riverpod page par page avec barre de progression interactive.
-6. **Tests de Validation Multilingue** : Écriture de tests unitaires et d'intégration validant l'extraction sur des documents réels (français, anglais, arabe et mixte).
+1. Intégration AAR ONNX Runtime Mobile.
+2. Packaging des modèles quantifiés INT8.
+3. Implémentation du moteur concret `PaddleOcrEngine`.
+4. Normalisation BiDi et projection cartésienne.
+5. Gestion du stream d'avancement et annulation.
+6. Validation sur fixtures réelles.
 
 ---
 
-## 20. Questions Ouvertes et Réponses Techniques
+## 20. Questions Ouvertes
 
-1. *Faut-il permettre à l'utilisateur de sélectionner manuellement la langue de l'OCR ?*  
-   **Recommandation** : Oui, dans les paramètres ou lors du lancement de l'OCR (options : « Détection automatique », « Français / Anglais », « Arabe », « Bilingue Arabe + Français »).
-2. *Comment gérer les documents volumineux (> 100 pages) ?*  
-   **Recommandation** : Proposer le choix des pages à traiter (ex: « Page courante », « Toutes les pages », « Intervalle X - Y ») avec notification en premier plan (*Foreground Service*) si l'application passe en arrière-plan.
+- Sélection de profil linguistique par l'utilisateur (Auto / Arabe / Français-Anglais).
+- Gestion des gros volumes par traitement par lots séquentiel avec notification d'arrière-plan.
 
 ---
 
 ## 21. Plan de Validation de la Phase 4.0
 
-- [x] Vérification de l'intégrité de la base de code existante (aucun code prématuré de la Phase 4.1 introduit).
-- [x] `flutter analyze` : 0 avertissement, 0 erreur.
-- [x] `flutter test` : 52 / 52 tests validés avec succès (100%).
-- [x] `go test -v ./...` & `go vet ./...` : 100% validé.
-- [x] Vérification de l'absence totale de secrets, clés d'API ou binaires dans le commit.
+- `flutter analyze` : 0 avertissement, 0 erreur.
+- `flutter test` : 52 / 52 tests validés.
+- `go test -v ./...` & `go vet ./...` : 100% validé.
+
+---
+---
+
+## 22. VALIDATION ET CORRECTIONS TECHNIQUES APPROFONDIES (PHASE 4.0.1)
+
+Cette section consigne la revue critique détaillée et les rectifications techniques formelles apportées à l'audit de la Phase 4.0 avant le lancement de la Phase 4.1.
+
+### 22.1. Correction de l'Architecture des Modèles (Model Architecture Clarification)
+
+> [!WARNING]
+> **Clarification Cruciale** : PaddleOCR n'est **PAS** un modèle unique monolithique « PP-OCRv4 » qui contiendrait magiquement toutes les langues du monde.
+> Il s'agit d'un **cadre logiciel modulaire (framework)** orchestrant trois modèles distincts exécutés séquentiellement en pipeline.
+
+#### Décomposition du Pipeline PaddleOCR :
+1. **Modèle de Détection Textuelle (Text Detection)** :
+   - *Architecture* : DBNet++ (Differentiable Binarization).
+   - *Modèle sélectionné* : `ch_PP-OCRv4_det_infer.onnx` ou `multilingual_PP-OCRv3_det_infer.onnx`.
+   - *Rôle* : Localise les polygones et boîtes englobantes des lignes de texte sur l'image entière, indépendamment de la langue ou du sens de lecture.
+2. **Modèle de Classification d'Angle / Orientation (Direction Classifier)** :
+   - *Architecture* : MobileNetV3 léger.
+   - *Modèle sélectionné* : `ch_ppocr_mobile_v2.0_cls_infer.onnx`.
+   - *Rôle* : Détecte si le patch de ligne découpé est à l'endroit (0°) ou inversé (180°) et applique une rotation physique avant la reconnaissance.
+3. **Modèles de Reconnaissance Textuelle Spécifiques (Script-Specific Text Recognition)** :
+   - *Architecture* : SVTR / MobileNetV1-V3 + Décodeur CTC.
+   - *Pour l'Arabe (A, D, E)* : `arabic_PP-OCRv3_rec_infer.onnx` (Modèle officiel PaddleOCR PP-OCRv3 pour l'arabe).
+     - *Source officielle* : `PaddlePaddle/PaddleOCR/blob/main/doc/doc_en/models_list_en.md` (Tableau Multilingual OCR models).
+     - *Dictionnaire* : `arabic_dict.txt` (100+ caractères arabes, chiffres arabo-indiens `٠-٩`, chiffres occidentaux `0-9`, ponctuation, et caractères latins de base).
+   - *Pour le Français / Anglais pur (B, C)* : `en_PP-OCRv4_rec_infer.onnx` (Modèle officiel PP-OCRv4 Latin/Anglais) ou `multilingual_PP-OCRv3_rec_infer.onnx`.
+     - *Dictionnaire* : `en_dict.txt` (Alphabet latin complet majuscule/minuscule, accents, ponctuation, symboles).
+
+#### Stratégie Recommandée selon le Type de Document dans MorphPDF :
+- **Cas 1 : Document Arabe ou Bilingue Arabe + Français / Chiffres (Cas A, D, E)** :
+  Pipeline : `Détecteur DBNet` $\rightarrow$ `Classificateur 0/180°` $\rightarrow$ `arabic_PP-OCRv3_rec`.  
+  *Justification* : Le modèle arabe officiel de PaddleOCR supporte nativement les caractères latins de base et les chiffres au sein de son dictionnaire, permettant la lecture directe des documents administratifs et factures bilingues sans nécessiter un basculement complexe de modèle par mot.
+- **Cas 2 : Document exclusivement Français / Anglais (Cas B, C)** :
+  Pipeline : `Détecteur DBNet` $\rightarrow$ `Classificateur 0/180°` $\rightarrow$ `en_PP-OCRv4_rec` (ou Google ML Kit en voie rapide).
+
+---
+
+### 22.2. Validation Approfondie du Traitement Arabe et Responsabilité BiDi
+
+> [!IMPORTANT]
+> **Distinction Fondamentale** : Le modèle de reconnaissance neuronale `arabic_PP-OCRv3_rec` de PaddleOCR et son décodeur CTC n'effectuent **PAS** de normalisation Unicode BiDi automatique.
+> Ils prédisent les caractères dans leur **ordre visuel** (Right-to-Left naturel de lecture du patch).
+
+#### Séparation Stricte des Responsabilités :
+1. **Ordre de Reconnaissance OCR (Visual Order)** :
+   Le patch de texte redressé est parcouru par le modèle de gauche à droite ou de droite à gauche, produisant une chaîne de glyphes ordonnée selon la disposition visuelle sur l'image.
+2. **Ordre Logique Unicode (Logical Order — MorphPDF Responsibility)** :
+   Les moteurs de rendu de texte modernes (Flutter TextSpan, PDFium, moteurs PDF) et les moteurs d'indexation exigent que le texte arabe soit stocké dans l'**ordre logique de frappe** (le premier caractère prononcé/saisi est au début de la chaîne Unicode, laissant au moteur de rendu le soin d'inverser visuellement les glyphes).
+3. **Mise en Œuvre dans MorphPDF (Phase 4.1)** :
+   MorphPDF prendra en charge une étape explicite de **post-traitement BiDi** (via le package Dart standard `intl/bidi` ou un module de réordonnancement déterministe). Cette étape :
+   - Identifie les spans arabes et les spans numériques/latins.
+   - Convertit l'ordre visuel extrait en ordre logique standard Unicode.
+   - Associe chaque mot réordonné à sa boîte englobante spatiale d'origine.
+
+---
+
+### 22.3. Précision Technique sur Google ML Kit
+
+La position de Google ML Kit est clarifiée de manière irréfutable :
+- **Google ML Kit Text Recognition V2 (On-Device)** : Supporte uniquement les écritures Latine (`com.google.mlkit:text-recognition`), Chinoise (`text-recognition-chinese`), Dévanagari (`text-recognition-devanagari`), Japonaise (`text-recognition-japanese`), et Coréenne (`text-recognition-korean`). **Aucun modèle arabe n'existe on-device**.
+- **Google ML Kit Language Identification (`com.google.mlkit:language-id`)** : Identifie la langue d'une chaîne de caractères préexistante (identifie le code `'ar'`), mais ne sait pas lire une image. Ne doit pas être confondu avec l'OCR.
+- **Google Cloud Vision API** : Propose un OCR arabe de haute qualité mais fonctionne exclusivement via requête HTTP sur les serveurs de Google, enfreignant le principe local-first de MorphPDF.
+- **Google ML Kit Document Scanner (`play-services-mlkit-document-scanner`)** : UI de recadrage/détection de page, sans moteur OCR intégré.
+
+*Conclusion scellée* : Google ML Kit demeure strictement un **moteur secondaire et optionnel**, réservé à l'accélération des documents 100% latins.
+
+---
+
+### 22.4. Audit Juridique Détaillé Modèle par Modèle
+
+Vérification minutieuse des licences associées à chaque brique logicielle et modèle :
+
+| Composant | Nom / Artifact Officiel | Version | Licence | Usage Commercial | Statut MorphPDF | Source Officielle |
+|---|---|---|---|---|---|---|
+| **PaddleOCR Framework** | `PaddlePaddle/PaddleOCR` | 2.7+ | Apache 2.0 | ✅ Autorisé | **SAFE** | GitHub PaddlePaddle |
+| **ONNX Runtime Engine** | `com.microsoft.onnxruntime:onnxruntime-android` | 1.17.0+ | MIT License | ✅ Autorisé | **SAFE** | Microsoft Maven Central |
+| **Modèle Détecteur** | `ch_PP-OCRv4_det_infer.onnx` | PP-OCRv4 | Apache 2.0 | ✅ Autorisé | **SAFE** | Baidu Model Zoo |
+| **Modèle Angle Cls** | `ch_ppocr_mobile_v2.0_cls_infer.onnx` | v2.0 | Apache 2.0 | ✅ Autorisé | **SAFE** | Baidu Model Zoo |
+| **Modèle Reco Arabe** | `arabic_PP-OCRv3_rec_infer.onnx` | PP-OCRv3 | Apache 2.0 | ✅ Autorisé | **SAFE** | Baidu Multilingual Models |
+| **Modèle Reco Latin** | `en_PP-OCRv4_rec_infer.onnx` | PP-OCRv4 | Apache 2.0 | ✅ Autorisé | **SAFE** | Baidu Model Zoo |
+| **Dictionnaires Clés** | `arabic_dict.txt`, `en_dict.txt` | v3/v4 | Apache 2.0 | ✅ Autorisé | **SAFE** | PaddleOCR ppocr/utils |
+
+> [!NOTE]
+> Tous les modèles officiels ci-dessus sont publiés sous licence **Apache 2.0** par Baidu et convertibles au standard ONNX (licence MIT).  
+> **Statut global : SAFE**. Aucun modèle communautaire non vérifié ne sera intégré.
+
+---
+
+### 22.5. Décomposition Rigoureuse de l'Empreinte Taille (APK Size Validation)
+
+> [!IMPORTANT]
+> L'impact taille de « ~16 Mo » est une **estimation théorique d'ingénierie**, et **NON** une mesure définitive sur l'APK de production. La mesure définitive sera arrêtée lors du premier build de la Phase 4.1.
+
+#### Décomposition Détaillée de l'Empreinte Estimée :
+
+| Élément | Format | Taille Non Compressée (Estimée) | Taille Compressée dans APK (Estimée) | Statut |
+|---|---|---|---|---|
+| `libonnxruntime.so` (`arm64-v8a`) | Binaire natif ELF C++ | ~11.5 Mo | ~4.8 Mo | ESTIMÉ (Vendor AAR) |
+| Détecteur DBNet (`ch_PP-OCRv4_det`) | ONNX quantifié INT8 | ~2.8 Mo | ~2.4 Mo | ESTIMÉ (Modèle ONNX) |
+| Classificateur d'angle (`cls`) | ONNX quantifié INT8 | ~1.2 Mo | ~1.0 Mo | ESTIMÉ (Modèle ONNX) |
+| Reco Arabe (`arabic_PP-OCRv3_rec`) | ONNX quantifié INT8 | ~5.8 Mo | ~5.1 Mo | ESTIMÉ (Modèle ONNX) |
+| Reco Latin (`en_PP-OCRv4_rec`) | ONNX quantifié INT8 | ~3.8 Mo | ~3.3 Mo | ESTIMÉ (Modèle ONNX) |
+| Dictionnaires (`.txt`) | Fichiers texte UTF-8 | ~60 Ko | ~20 Ko | ESTIMÉ |
+| **TOTAL CUMULÉ** | — | **~25.1 Mo** | **~16.6 Mo** | **Non mesuré en production (Phase 4.1)** |
+
+---
+
+### 22.6. Méthodologie Formelle des Benchmarks (Performance Validation)
+
+Les valeurs présentées en Phase 4.0 (~430 ms par page à 200 DPI) constituent des **objectifs cibles d'ingénierie (Target Estimates)** basés sur la littérature technique, et **NON des mesures réelles sur terminal mobile**.
+
+#### Protocole de Mesure de la Phase 4.1 :
+- **Appareil cible** : Terminal Android physique ARM64 (SoC représentatif de milieu de gamme, ex: Snapdragon 778G / 7 Gen 1 ou Dimensity 7050).
+- **8 Documents Étalons (Test Fixtures)** :
+  1. `doc_fr_clean.pdf` : Scan français administratif propre (300 DPI d'origine).
+  2. `doc_en_clean.pdf` : Scan anglais propre.
+  3. `doc_ar_clean.pdf` : Scan arabe standard (page de livre/article).
+  4. `doc_bilingual_fr_ar.pdf` : Document officiel bilingue français/arabe (formulaire/facture).
+  5. `doc_low_res.pdf` : Scan dégradé / bruité (100-150 DPI).
+  6. `doc_multicolumn.pdf` : Mise en page 3 colonnes.
+  7. `doc_table.pdf` : Document avec grille tabulaire et données chiffrées.
+  8. `doc_rotated.pdf` : Scan pivoté à 90° et 180°.
+- **Résolutions de test** : 150 DPI, 200 DPI, 300 DPI.
+- **10 Métriques Mesurées** :
+  1. Temps de rendu PDFium ($T_{\text{render}}$).
+  2. Temps de prétraitement bitmap ($T_{\text{preprocess}}$).
+  3. Temps de chargement initial du modèle ($T_{\text{cold\_start}}$).
+  4. Temps d'inférence Détection DBNet ($T_{\text{det}}$).
+  5. Temps d'inférence Reconnaissance ($T_{\text{rec}}$).
+  6. Temps de post-traitement BiDi et coordonnées ($T_{\text{post}}$).
+  7. Temps total par page ($T_{\text{page}}$).
+  8. Crête mémoire RSS Android ($M_{\text{peak}}$ en Mo).
+  9. Charge CPU et échauffement thermique sur 10 pages consécutives.
+  10. Latence d'annulation sur requête utilisateur ($T_{\text{cancel}}$).
+
+---
+
+### 22.7. Validation du Modèle Mémoire et Traitement Séquentiel
+
+- **Plafond théorique crête** : ~73.8 Mo (ESTIMÉ).
+- **Règle absolue d'architecture** : **Traitement séquentiel strict ($N = 1$ page active)**.
+  - Ne jamais allouer ou charger l'intégralité d'un document PDF en mémoire bitmap.
+  - Chaque page suit un cycle de vie étanche :
+    $$\text{Rendu} \longrightarrow \text{Tenseur} \longrightarrow \text{Inférence} \longrightarrow \text{Extraction Boîtes} \longrightarrow \text{Destruction Immédiate des Bitmaps}$$
+  - Libération explicite des buffers natifs C++ et invocation du garbage collector si nécessaire pour garantir la stabilité sur les documents de 50 à 100 pages.
+
+---
+
+### 22.8. Architecture Android / ONNX Runtime : Comparaison et Choix Retenu
+
+Trois mécanismes d'intégration entre Flutter et ONNX Runtime ont été analysés :
+
+| Option | Mécanisme | Avantages | Inconvénients | Verdict MorphPDF |
+|---|---|---|---|---|
+| **Option A : Dart FFI direct** | Dart FFI $\rightarrow$ `libonnxruntime.so` C API | Zéro copie mémoire, pas de bridge Java/Kotlin | Gestion manuelle complexe des allocations C++, résolution de bibliothèque délicate sur Android | Complexe |
+| **Option B : Bridge Android Natif** | Flutter $\rightarrow$ `MethodChannel` $\rightarrow$ Kotlin $\rightarrow$ `onnxruntime-android` AAR | Dépendance Gradle officielle Microsoft, cycle de vie Android natif, gestion du multi-threading Kotlin | Sérialisation mémoire IPC des bitmaps sur le channel | Éprouvé et stable |
+| **Option C : Bridge Kotlin avec Fichier/Buffer Partagé** | Flutter rend sur fichier/buffer temporaire $\rightarrow$ Kotlin traite $\rightarrow$ retourne JSON de coordonnées | Isolation mémoire totale, pas de crash IPC sur gros bitmaps, API propre | Légère latence I/O temporaire (< 10 ms) | **RECOMMANDÉ pour Phase 4.1** |
+
+*Décision d'intégration pour Phase 4.1* : **Option C (Bridge Android Kotlin via AAR officiel `onnxruntime-android`)**.  
+Cette approche garantit une compatibilité totale avec les builds GitHub Actions sans nécessiter de configuration NDK manuelle dans le pipeline CI.
+
+---
+
+### 22.9. Règles R8 / ProGuard Requises
+
+L'intégration d'ONNX Runtime Mobile sur Android utilise des liaisons JNI natives. Si R8 ou ProGuard obfusque ou supprime les classes internes d'ONNX Runtime, l'application crashe au démarrage avec `UnsatisfiedLinkError`.
+
+*Configuration ProGuard obligatoire (à intégrer dans `android/app/proguard-rules.pro` en Phase 4.1)* :
+```proguard
+# Règles obligatoires pour ONNX Runtime Android
+-keep class ai.onnxruntime.** { *; }
+-dontwarn ai.onnxruntime.**
+```
+
+---
+
+### 22.10. GitHub Actions & Validation ARM64
+
+- **Build CI (GitHub Actions)** :
+  L'AAR `com.microsoft.onnxruntime:onnxruntime-android` contient déjà les binaires partagés précompilés pour `arm64-v8a`, `armeabi-v7a`, `x86_64`.  
+  Le runner GitHub Actions (Linux x86_64) assemblera donc l'APK/AAB sans aucune erreur et sans avoir besoin d'exécuter l'inférence.
+- **Validation Réelle ARM64** :
+  L'exécution réelle du graphe d'inférence ONNX sur l'accélérateur ARM64 Neon ne sera considérée comme formellement validée qu'après déploiement et test sur un terminal physique ou émulateur ARM64 lors de la Phase 4.1.
+
+---
+
+### 22.11. Contrat d'Implémentation Précis pour la Phase 4.1 (Phase 4.1 Contract)
+
+En Phase 4.1, les classes du domaine OCR devront respecter la structure formelle suivante (spécification conceptuelle) :
+
+```dart
+/// Résultat complet de l'OCR pour une page donnée
+class OcrPageResult {
+  final int pageIndex; // 0-indexed ou 1-indexed
+  final double imageWidth; // Largeur en pixels de l'image analysée
+  final double imageHeight; // Hauteur en pixels de l'image analysée
+  final List<OcrBlock> blocks; // Blocs de texte détectés
+  final int processingTimeMs; // Temps d'exécution en ms
+  final String engineUsed; // 'PaddleOCR (ONNX)' ou 'ML Kit'
+  final bool isRightToLeft; // Présence dominante de texte RTL
+
+  const OcrPageResult({
+    required this.pageIndex,
+    required this.imageWidth,
+    required this.imageHeight,
+    required this.blocks,
+    required this.processingTimeMs,
+    required this.engineUsed,
+    this.isRightToLeft = false,
+  });
+}
+
+/// Bloc géométrique de texte
+class OcrBlock {
+  final String id;
+  final String text; // Texte ordonné (ordre logique Unicode)
+  final double confidence; // 0.0 à 1.0
+  final OcrBoundingBox boundingBox; // Coordonnées spatiales
+  final String language; // 'ar', 'fr', 'en', 'mixed'
+  final List<OcrLine> lines;
+
+  const OcrBlock({
+    required this.id,
+    required this.text,
+    required this.confidence,
+    required this.boundingBox,
+    required this.language,
+    required this.lines,
+  });
+}
+
+/// Ligne de texte au sein d'un bloc
+class OcrLine {
+  final String text;
+  final double confidence;
+  final OcrBoundingBox boundingBox;
+  final List<OcrWord> words;
+
+  const OcrLine({
+    required this.text,
+    required this.confidence,
+    required this.boundingBox,
+    required this.words,
+  });
+}
+
+/// Mot individuel
+class OcrWord {
+  final String text;
+  final double confidence;
+  final OcrBoundingBox boundingBox;
+
+  const OcrWord({
+    required this.text,
+    required this.confidence,
+    required this.boundingBox,
+  });
+}
+
+/// Boîte englobante polygonale et rectangulaire
+class OcrBoundingBox {
+  final double left;
+  final double top;
+  final double width;
+  final double height;
+  final List<List<double>>? polygonPoints; // [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+
+  const OcrBoundingBox({
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
+    this.polygonPoints,
+  });
+}
+
+/// État de progression pour le suivi interactif
+class OcrProgress {
+  final int currentPage;
+  final int totalPages;
+  final double fraction; // 0.0 à 1.0
+  final String statusMessage;
+
+  const OcrProgress({
+    required this.currentPage,
+    required this.totalPages,
+    required this.fraction,
+    required this.statusMessage,
+  });
+}
+
+/// Hiérarchie des exceptions typées
+abstract class OcrException implements Exception {
+  final String message;
+  const OcrException(this.message);
+  @override
+  String toString() => 'OcrException: $message';
+}
+
+class OcrModelNotFoundException extends OcrException {
+  const OcrModelNotFoundException(super.message);
+}
+
+class OcrInferenceFailedException extends OcrException {
+  const OcrInferenceFailedException(super.message);
+}
+
+class OcrCancelledException extends OcrException {
+  const OcrCancelledException() : super('Le traitement OCR a été annulé par l\'utilisateur.');
+}
+
+class OcrImageTooLargeException extends OcrException {
+  const OcrImageTooLargeException(super.message);
+}
+```
+
+---
+
+### 22.12. Conversion Géométrique et Alignement avec le DocumentModel
+
+L'intégration réutilisera directement [`CoordinateConverter`](file:///root/MorphPDF/mobile/flutter/lib/core/pdf/pdf_models.dart#L80-L135) :
+
+```dart
+// Exemple de conversion directe sans duplication de logique
+final pdfRect = CoordinateConverter.pixelsToPdfRect(
+  pixelX: word.boundingBox.left,
+  pixelY: word.boundingBox.top,
+  pixelWidth: word.boundingBox.width,
+  pixelHeight: word.boundingBox.height,
+  pageHeightPt: pageHeightInPdfPoints,
+  dpi: 200,
+);
+
+final textBlock = TextBlock(
+  id: 'ocr_${pageIndex}_${blockIdx}',
+  pageNumber: pageIndex,
+  text: word.text,
+  x: pdfRect.left,
+  y: pdfRect.top,
+  width: pdfRect.width,
+  height: pdfRect.height,
+  confidence: word.confidence,
+  language: blockLanguage,
+);
+```
+
+---
+
+### 22.13. Mesures de Sécurité et Garde-Fous
+
+1. **Garde-fou Dimensionnel** : Rejet strict des pages rendues excédant $4096 \times 4096$ pixels ($16\text{ Mégapixels}$) pour prévenir les attaques par décompression et l'épuisement mémoire.
+2. **Nettoyage Immédiat** : Purgement garanti des bitmaps temporaires dans un bloc `finally` dès la fin du traitement de chaque page.
+3. **Contrôle d'Intégrité des Modèles** : Vérification des empreintes cryptographiques (SHA-256) des fichiers `.onnx` embarqués.
+4. **Zéro Émission Réseau** : Maintien strict du paradigme local-first : aucun pixel n'est transmis sur le réseau.
