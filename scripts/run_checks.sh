@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+export CI=true
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "=== [1/4] Go Vet & Tests ==="

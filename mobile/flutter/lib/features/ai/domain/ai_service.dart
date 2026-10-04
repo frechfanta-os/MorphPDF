@@ -1,4 +1,5 @@
 import 'ai_provider.dart';
+import 'document_analysis_model.dart';
 
 class AiService {
   final AiProvider _provider;
@@ -6,6 +7,10 @@ class AiService {
   AiService(this._provider);
 
   String get currentProviderName => _provider.providerName;
+
+  Future<DocumentAnalysisModel> analyzeStructured(String text, {String? instructions}) {
+    return _provider.analyzeStructured(text, instructions: instructions);
+  }
 
   Future<String> analyze(String text, {String? instructions}) {
     return _provider.analyzeDocument(text, instructions: instructions);
@@ -25,5 +30,9 @@ class AiService {
 
   Future<String> translate(String text, {required String targetLanguage}) {
     return _provider.translateText(text, targetLanguage: targetLanguage);
+  }
+
+  Future<String> chat(String message, {List<Map<String, String>>? history}) {
+    return _provider.chat(message, history: history);
   }
 }

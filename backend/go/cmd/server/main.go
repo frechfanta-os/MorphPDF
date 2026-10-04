@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"morphpdf/backend/internal/ai"
 	"morphpdf/backend/internal/config"
 	appHTTP "morphpdf/backend/internal/http"
 	"morphpdf/backend/internal/services"
@@ -19,9 +20,19 @@ func main() {
 	cfg := config.Load()
 
 	log.Printf("[MorphPDF Backend] Starting in %s mode...", cfg.Env)
+	if cfg.IsAIConfigured() {
+		log.Printf("[MorphPDF Backend] AI provider (OpenRouter) is configured with model: %s", cfg.OpenRouterModel)
+	} else {
+		log.Println("[MorphPDF Backend] Notice: OPENROUTER_API_KEY is not set. AI endpoints will return clean 503 errors.")
+	}
 
 	healthSvc := services.NewHealthService("1.0.0")
-	router := appHTTP.NewRouter(healthSvc)
+
+	// Initialize OpenRouter provider & AI service
+	aiProvider := ai.NewOpenRouterProvider(cfg.OpenRouterBaseURL, cfg.OpenRouterAPIKey, nil)
+	aiSvc := services.NewAIService(aiProvider, cfg.OpenRouterModel)
+
+	router := appHTTP.NewRouter(healthSvc, aiSvc)
 
 	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
 	srv := &http.Server{

@@ -4,7 +4,7 @@ import 'package:morphpdf/app/app.dart';
 import 'package:morphpdf/shared/constants/app_constants.dart';
 
 void main() {
-  testWidgets('Application startup renders SplashScreen with app name', (tester) async {
+  testWidgets('Application startup renders official AppSplashScreen with app name', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MorphPdfApp(),
@@ -12,10 +12,9 @@ void main() {
     );
 
     expect(find.text(AppConstants.appName), findsOneWidget);
-    expect(find.text('PDF Intelligent • Local-First • IA'), findsOneWidget);
+    expect(find.text('ghdinteractivestudio'), findsOneWidget);
 
-    // Advance past splash timer
-    await tester.pump(const Duration(milliseconds: 1300));
-    await tester.pump();
+    // Let the animation advance
+    await tester.pump(const Duration(milliseconds: 500));
   });
 }

@@ -6,6 +6,7 @@ class AppConstants {
 
   // Routes
   static const String routeSplash = '/splash';
+  static const String routeOnboarding = '/onboarding';
   static const String routeHome = '/home';
   static const String routeDocuments = '/documents';
   static const String routePdfViewer = '/pdf-viewer';

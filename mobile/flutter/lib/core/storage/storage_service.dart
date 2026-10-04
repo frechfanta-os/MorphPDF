@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'app_paths.dart';
 
@@ -7,6 +8,8 @@ abstract class StorageService {
   Future<void> deleteTemp(String fileName);
   Future<File> saveExport(String fileName, List<int> bytes);
   Future<List<File>> listExports();
+  Future<bool> isOnboardingCompleted();
+  Future<void> setOnboardingCompleted(bool completed);
 }
 
 class LocalStorageService implements StorageService {
@@ -48,5 +51,35 @@ class LocalStorageService implements StorageService {
     final exportDir = await AppPaths.getExportDirectory();
     final entities = exportDir.listSync();
     return entities.whereType<File>().toList();
+  }
+
+  @override
+  Future<bool> isOnboardingCompleted() async {
+    try {
+      final docDir = await AppPaths.getDocumentsDirectory();
+      final file = File('${docDir.path}/app_state.json');
+      if (!await file.exists()) return false;
+      final content = await file.readAsString();
+      final map = jsonDecode(content) as Map<String, dynamic>;
+      return map['onboardingCompleted'] as bool? ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> setOnboardingCompleted(bool completed) async {
+    try {
+      final docDir = await AppPaths.getDocumentsDirectory();
+      final file = File('${docDir.path}/app_state.json');
+      Map<String, dynamic> map = {};
+      if (await file.exists()) {
+        try {
+          map = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+      map['onboardingCompleted'] = completed;
+      await file.writeAsString(jsonEncode(map));
+    } catch (_) {}
   }
 }

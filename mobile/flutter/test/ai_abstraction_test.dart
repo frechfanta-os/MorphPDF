@@ -10,6 +10,10 @@ void main() {
 
       expect(service.currentProviderName, contains('OpenRouter'));
 
+      final structured = await service.analyzeStructured('Contenu du contrat');
+      expect(structured.documentType, 'Contrat');
+      expect(structured.amounts, contains('12 500 €'));
+
       final analysis = await service.analyze('Contenu du contrat');
       expect(analysis, contains('Mock Analysis'));
 
@@ -24,6 +28,9 @@ void main() {
 
       final translation = await service.translate('Hello', targetLanguage: 'fr');
       expect(translation, contains('Mock Traduction vers [fr]'));
+
+      final chatReply = await service.chat('Question sur le document');
+      expect(chatReply, contains('Mock Assistant:'));
     });
   });
 }

@@ -32,28 +32,56 @@ void main() {
       expect(res.error, isNull);
     });
 
-    test('analyzeDocument() parses stubbed response correctly', () async {
+    test('getAiStatus() parses valid response', () async {
       final mockHttp = MockClient((request) async {
-        return http.Response(
-          jsonEncode({
-            'success': false,
-            'data': null,
-            'error': {
-              'code': 'NOT_IMPLEMENTED',
-              'message': 'Endpoint /api/v1/documents/analyze is not implemented yet in this phase',
-            },
-          }),
-          501,
-          headers: {'content-type': 'application/json'},
-        );
+        if (request.url.path.endsWith('/ai/status')) {
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': {'provider': 'OpenRouter', 'configured': true, 'model': 'meta-llama/llama-3.3-70b-instruct:free'},
+              'error': null,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Not Found', 404);
       });
 
       final client = ApiClient(httpClient: mockHttp, baseUrl: 'http://127.0.0.1:8080/api/v1');
-      final res = await client.analyzeDocument('doc-1');
+      final res = await client.getAiStatus();
 
-      expect(res.success, isFalse);
-      expect(res.data, isNull);
-      expect(res.error?.code, 'NOT_IMPLEMENTED');
+      expect(res.success, isTrue);
+      expect(res.data?['provider'], 'OpenRouter');
+      expect(res.data?['configured'], isTrue);
+    });
+
+    test('analyzeAi() parses structured result', () async {
+      final mockHttp = MockClient((request) async {
+        if (request.url.path.endsWith('/ai/analyze')) {
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': {
+                'summary': 'Résumé de document',
+                'language': 'fr',
+                'document_type': 'Contrat',
+                'important_information': ['Important'],
+              },
+              'error': null,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      final client = ApiClient(httpClient: mockHttp, baseUrl: 'http://127.0.0.1:8080/api/v1');
+      final res = await client.analyzeAi('Mon contrat...');
+
+      expect(res.success, isTrue);
+      expect(res.data?['document_type'], 'Contrat');
     });
 
     test('ApiResponse.fromJson handles manual raw map', () {

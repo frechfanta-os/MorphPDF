@@ -368,6 +368,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.2"
+  splashscreen_ghdinteractivestudio:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: main
+      resolved-ref: "3f738da5d98cd17b88a325af70e1bddc4331ff9e"
+      url: "https://github.com/Anisghd-lab/Splashscreen-ghdinteractivestudio.git"
+    source: git
+    version: "1.0.0"
   stack_trace:
     dependency: transitive
     description:

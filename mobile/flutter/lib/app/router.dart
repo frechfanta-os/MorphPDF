@@ -8,6 +8,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/home/presentation/splash_screen.dart';
 import '../features/merge_split/presentation/merge_split_screen.dart';
 import '../features/ocr/presentation/ocr_screen.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/pdf_editor/presentation/pdf_editor_screen.dart';
 import '../features/pdf_viewer/presentation/pdf_viewer_screen.dart';
 import '../features/scanner/presentation/scanner_screen.dart';
@@ -19,7 +20,9 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppConstants.routeSplash:
-        return _buildRoute(const SplashScreen(), settings);
+        return _buildRoute(const MorphPdfSplashScreen(), settings);
+      case AppConstants.routeOnboarding:
+        return _buildRoute(const OnboardingScreen(), settings);
       case AppConstants.routeHome:
         return _buildRoute(const HomeScreen(), settings);
       case AppConstants.routeDocuments:

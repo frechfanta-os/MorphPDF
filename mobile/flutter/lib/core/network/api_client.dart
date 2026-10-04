@@ -88,6 +88,18 @@ class ApiClient {
     return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
   }
 
+  /// GET /ai/status
+  Future<ApiResponse<Map<String, dynamic>>> getAiStatus() async {
+    final json = await _get('/ai/status');
+    return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
+  }
+
+  /// POST /ai/chat
+  Future<ApiResponse<Map<String, dynamic>>> chatAi(String message, {List<Map<String, String>>? history}) async {
+    final json = await _post('/ai/chat', body: {'message': message, 'history': history ?? []});
+    return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
+  }
+
   /// POST /ai/analyze
   Future<ApiResponse<Map<String, dynamic>>> analyzeAi(String text, {String? instructions}) async {
     final json = await _post('/ai/analyze', body: {'text': text, 'instructions': instructions});
@@ -103,6 +115,18 @@ class ApiClient {
   /// POST /ai/summarize
   Future<ApiResponse<Map<String, dynamic>>> summarize(String text, {int maxLength = 500}) async {
     final json = await _post('/ai/summarize', body: {'text': text, 'maxLength': maxLength});
+    return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
+  }
+
+  /// POST /ai/extract
+  Future<ApiResponse<Map<String, dynamic>>> extractAi(String text, {String? schema}) async {
+    final json = await _post('/ai/extract', body: {'text': text, 'schema': schema});
+    return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
+  }
+
+  /// POST /ai/translate
+  Future<ApiResponse<Map<String, dynamic>>> translateAi(String text, {required String targetLanguage}) async {
+    final json = await _post('/ai/translate', body: {'text': text, 'target_language': targetLanguage});
     return ApiResponse.fromJson(json, (data) => data as Map<String, dynamic>);
   }
 
