@@ -2,7 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:morphpdf/core/ocr/ocr_models.dart';
 
 void main() {
-  group('OCR Models & Exceptions Tests', () {
+  group('OCR Models, Enums & Typed Exceptions Tests', () {
+    test('OcrMode enumeration values', () {
+      expect(OcrMode.values, contains(OcrMode.auto));
+      expect(OcrMode.values, contains(OcrMode.arabic));
+      expect(OcrMode.values, contains(OcrMode.latin));
+      expect(OcrMode.values.length, 3);
+    });
+
     test('OcrBoundingBox serialization and properties', () {
       const box = OcrBoundingBox(
         left: 10.0,
@@ -28,6 +35,7 @@ void main() {
       expect(fromJson.width, 100.0);
       expect(fromJson.height, 50.0);
       expect(fromJson.polygonPoints?.length, 4);
+      expect(fromJson.polygonPoints?[0], [10.0, 20.0]);
     });
 
     test('OcrWord and OcrLine serialization', () {
@@ -87,7 +95,7 @@ void main() {
       expect(pageFromJson.isRightToLeft, isFalse);
     });
 
-    test('OcrProgress calculation', () {
+    test('OcrProgress calculation and boundary clamping', () {
       const progress = OcrProgress(
         currentPage: 2,
         totalPages: 4,
@@ -97,32 +105,45 @@ void main() {
 
       expect(progress.percentage, 50);
       expect(progress.statusMessage, 'Page 2/4');
+
+      const clampedUnder = OcrProgress(currentPage: 0, totalPages: 1, fraction: -0.2, statusMessage: 'Init');
+      expect(clampedUnder.percentage, 0);
+
+      const clampedOver = OcrProgress(currentPage: 1, totalPages: 1, fraction: 1.5, statusMessage: 'Done');
+      expect(clampedOver.percentage, 100);
     });
 
-    test('OcrCancellationToken can cancel', () {
+    test('OcrCancellationToken can cancel and hold state', () {
       final token = OcrCancellationToken();
       expect(token.isCancelled, isFalse);
       token.cancel();
       expect(token.isCancelled, isTrue);
     });
 
-    test('Typed OcrExceptions formatting', () {
+    test('Typed OcrExceptions formatting and properties', () {
       const cancelled = OcrCancelledException();
       expect(cancelled.toString(), contains('annulé'));
+      expect(cancelled.message, contains('annulé'));
 
       const tooLarge = OcrImageTooLargeException(width: 5000, height: 3000, maxAllowed: 4096);
       expect(tooLarge.width, 5000);
+      expect(tooLarge.height, 3000);
       expect(tooLarge.maxAllowed, 4096);
       expect(tooLarge.toString(), contains('5000x3000'));
+      expect(tooLarge.toString(), contains('4096x4096'));
 
-      const modelNotFound = OcrModelNotFoundException('Model missing', 'path/to/model');
-      expect(modelNotFound.toString(), contains('Model missing'));
+      const modelNotFound = OcrModelNotFoundException('Model missing', 'assets/model.onnx');
+      expect(modelNotFound.message, 'Model missing');
+      expect(modelNotFound.details, 'assets/model.onnx');
+      expect(modelNotFound.toString(), contains('assets/model.onnx'));
 
-      const inferenceFailed = OcrInferenceFailedException('Inference error');
+      const inferenceFailed = OcrInferenceFailedException('Inference error', 'Native error code 12');
       expect(inferenceFailed.toString(), contains('Inference error'));
+      expect(inferenceFailed.toString(), contains('Native error code 12'));
 
-      const unsupported = OcrUnsupportedLanguageException('Language xy not supported');
+      const unsupported = OcrUnsupportedLanguageException('Language xy not supported', 'Supported: ar, en');
       expect(unsupported.toString(), contains('xy'));
+      expect(unsupported.toString(), contains('Supported: ar, en'));
     });
   });
 }

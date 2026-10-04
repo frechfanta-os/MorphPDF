@@ -5,7 +5,25 @@ This document outlines the architecture, execution pipeline, and operational con
 
 ---
 
-## 1. Executive Summary & Design Principles
+## 1. État de Validation Actuel (Phase 4.1.1)
+
+```
+======================================================================
+STATUT GLOBAL : BLOCKED — RUNTIME NOT VERIFIED
+======================================================================
+```
+
+| Dimension de Validation | Statut Actuel | Justification Technique |
+| :--- | :---: | :--- |
+| **BUILD VERIFIED** | **OUI (YES)** | Dépendance `onnxruntime-android:1.17.0`, ProGuard, structure Kotlin et Flutter conformes. |
+| **STATIC VERIFIED** | **OUI (YES)** | Analyse statique Dart (0 issue) & Go vet (0 issue). Revue du pont Kotlin effectuée. |
+| **AUTOMATED TESTS** | **OUI (YES)** | 82/82 tests Flutter réussis. Tests Go d'intégration réussis. |
+| **PHYSICAL ARM64 RUNTIME** | **NON (NO)** | Aucun terminal physique ARM64 raccordé au banc local (`adb devices` vide). |
+| **REAL OCR INFERENCE** | **NON (NO)** | L'inférence réelle sur puce neuronale/GPU n'a pas été exécutée sur matériel physique. |
+
+---
+
+## 2. Executive Summary & Design Principles
 
 - **Primary OCR Engine**: PaddleOCR (`ch_PP-OCRv4_det`, `arabic_PP-OCRv3_rec`, `en_PP-OCRv4_rec`).
 - **Inference Runtime**: Microsoft ONNX Runtime Mobile (`com.microsoft.onnxruntime:onnxruntime-android:1.17.0`) via native Android Kotlin bridge (`PaddleOcrBridge`).

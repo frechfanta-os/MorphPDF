@@ -3,76 +3,110 @@ import 'package:morphpdf/core/ocr/bidi_normalizer.dart';
 import 'package:morphpdf/core/ocr/ocr_models.dart';
 
 void main() {
-  group('BiDi Normalizer Tests', () {
-    test('Arabic detection', () {
-      expect(BidiNormalizer.containsArabic('الجمهورية الجزائرية'), isTrue);
-      expect(BidiNormalizer.containsArabic('Hello World'), isFalse);
-      expect(BidiNormalizer.containsArabic('Facture 2024'), isFalse);
-      expect(BidiNormalizer.containsArabic('Doc رقم 123'), isTrue);
-
+  group('BiDi Normalizer Logic Tests (BIDI LOGIC VERIFIED)', () {
+    test('Pure Arabic detection and predominant language detection', () {
+      expect(BidiNormalizer.containsArabic('الجمهورية الجزائرية الديمقراطية'), isTrue);
       expect(BidiNormalizer.isPredominantlyArabic('الجمهورية الجزائرية'), isTrue);
-      expect(BidiNormalizer.isPredominantlyArabic('Hello World 123'), isFalse);
+
+      expect(BidiNormalizer.containsArabic('MorphPDF Document Reader'), isFalse);
+      expect(BidiNormalizer.isPredominantlyArabic('MorphPDF Document Reader'), isFalse);
     });
 
-    test('Non-destructive text normalization', () {
-      final arabicText = 'الجمهورية الجزائرية الديمقراطية';
-      final normalized = BidiNormalizer.normalizeText(arabicText);
-      expect(normalized, arabicText);
+    test('Mixed Arabic and Latin detection', () {
+      const mixed1 = 'Document officiel de la République: الجمهورية الجزائرية';
+      expect(BidiNormalizer.containsArabic(mixed1), isTrue);
+      // Latin rune count is higher than Arabic here
+      expect(BidiNormalizer.isPredominantlyArabic(mixed1), isFalse);
 
-      final mixed = 'MorphPDF وثيقة رسمية 2026';
-      final normMixed = BidiNormalizer.normalizeText(mixed);
-      expect(normMixed, contains('MorphPDF'));
-      expect(normMixed, contains('وثيقة'));
-      expect(normMixed, contains('2026'));
+      const mixed2 = 'وثيقة رسمية MorphPDF للتطبيق';
+      expect(BidiNormalizer.containsArabic(mixed2), isTrue);
+      expect(BidiNormalizer.isPredominantlyArabic(mixed2), isTrue);
     });
 
-    test('Preserves geometry during block and page normalization', () {
-      const box = OcrBoundingBox(left: 100, top: 200, width: 300, height: 40);
+    test('Arabic with Western numbers (0-9)', () {
+      const textWithWesternNums = 'قانون رقم 24 لسنة 2026';
+      final normalized = BidiNormalizer.normalizeText(textWithWesternNums);
+      expect(normalized, textWithWesternNums);
+      expect(normalized, contains('24'));
+      expect(normalized, contains('2026'));
+      expect(normalized, contains('قانون'));
+    });
+
+    test('Arabic with Arabic-Indic digits (٠-٩)', () {
+      const textWithIndicNums = 'المادة ٤٥ من الدستور ١٩٩٦';
+      final normalized = BidiNormalizer.normalizeText(textWithIndicNums);
+      expect(normalized, textWithIndicNums);
+      expect(normalized, contains('٤٥'));
+      expect(normalized, contains('١٩٩٦'));
+    });
+
+    test('Arabic with specialized punctuation (، ؛ ؟ . ! - « »)', () {
+      const punctuatedText = '«الجمهورية الجزائرية»؛ وزارة العدل: هل تم التعديل؟ نعم!';
+      final normalized = BidiNormalizer.normalizeText(punctuatedText);
+      expect(normalized, punctuatedText);
+      expect(normalized, contains('«'));
+      expect(normalized, contains('»'));
+      expect(normalized, contains('؛'));
+      expect(normalized, contains('؟'));
+    });
+
+    test('Preservation of spatial coordinates across nested Word -> Line -> Block hierarchy', () {
+      const wordBox1 = OcrBoundingBox(left: 100.0, top: 200.0, width: 80.0, height: 35.0);
+      const wordBox2 = OcrBoundingBox(left: 190.0, top: 200.0, width: 90.0, height: 35.0);
+      const lineBox = OcrBoundingBox(left: 100.0, top: 200.0, width: 180.0, height: 35.0);
+      const blockBox = OcrBoundingBox(left: 100.0, top: 200.0, width: 180.0, height: 75.0);
+
+      final word1 = const OcrWord(text: 'وزارة', confidence: 0.98, boundingBox: wordBox1);
+      final word2 = const OcrWord(text: 'العدل', confidence: 0.97, boundingBox: wordBox2);
+      final line = OcrLine(text: 'وزارة العدل', confidence: 0.975, boundingBox: lineBox, words: [word1, word2]);
+
       final block = OcrBlock(
-        id: 'b1',
+        id: 'block_ar_deep',
         text: 'وزارة العدل',
-        confidence: 0.97,
-        boundingBox: box,
+        confidence: 0.975,
+        boundingBox: blockBox,
         language: 'ar',
-        lines: [
-          const OcrLine(
-            text: 'وزارة العدل',
-            confidence: 0.97,
-            boundingBox: box,
-            words: [
-              OcrWord(
-                text: 'وزارة',
-                confidence: 0.98,
-                boundingBox: OcrBoundingBox(left: 100, top: 200, width: 140, height: 40),
-              ),
-              OcrWord(
-                text: 'العدل',
-                confidence: 0.96,
-                boundingBox: OcrBoundingBox(left: 250, top: 200, width: 150, height: 40),
-              ),
-            ],
-          ),
-        ],
+        lines: [line],
       );
 
       final page = OcrPageResult(
         pageIndex: 1,
-        imageWidth: 1000,
-        imageHeight: 1500,
+        imageWidth: 1200,
+        imageHeight: 1800,
         blocks: [block],
-        processingTimeMs: 120,
+        processingTimeMs: 140,
         engineUsed: 'PaddleOCR',
         isRightToLeft: false,
       );
 
       final normalizedPage = BidiNormalizer.normalizePage(page);
 
+      // Verify logical RTL flag
       expect(normalizedPage.isRightToLeft, isTrue);
-      expect(normalizedPage.blocks.first.boundingBox.left, 100);
-      expect(normalizedPage.blocks.first.boundingBox.top, 200);
-      expect(normalizedPage.blocks.first.boundingBox.width, 300);
-      expect(normalizedPage.blocks.first.lines.first.words.length, 2);
-      expect(normalizedPage.blocks.first.lines.first.words.first.boundingBox.left, 100);
+
+      // Verify exact spatial preservation
+      final normBlock = normalizedPage.blocks.first;
+      expect(normBlock.boundingBox.left, 100.0);
+      expect(normBlock.boundingBox.top, 200.0);
+      expect(normBlock.boundingBox.width, 180.0);
+      expect(normBlock.boundingBox.height, 75.0);
+
+      final normLine = normBlock.lines.first;
+      expect(normLine.boundingBox.left, 100.0);
+      expect(normLine.boundingBox.width, 180.0);
+
+      final normWord1 = normLine.words[0];
+      final normWord2 = normLine.words[1];
+      expect(normWord1.boundingBox.left, 100.0);
+      expect(normWord1.boundingBox.width, 80.0);
+      expect(normWord2.boundingBox.left, 190.0);
+      expect(normWord2.boundingBox.width, 90.0);
+    });
+
+    test('Non-destructive behavior on purely Latin and alphanumeric text', () {
+      const latinText = 'MorphPDF Studio 2026 - All Rights Reserved.';
+      final normalized = BidiNormalizer.normalizeText(latinText);
+      expect(normalized, latinText);
     });
   });
 }
