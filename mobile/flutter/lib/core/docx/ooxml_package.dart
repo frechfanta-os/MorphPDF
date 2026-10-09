@@ -58,10 +58,16 @@ class OoxmlPackage {
         type: OoxmlRelationships.headerType,
         target: 'header1.xml',
       );
-      final headerXml = OoxmlBuilder.buildHeaderXml(firstHeader);
+      final headerRels = OoxmlRelationships();
+      final headerXml = OoxmlBuilder.buildHeaderXml(firstHeader, headerRels: headerRels);
       final headerBytes = utf8.encode(headerXml);
       archive.addFile(ArchiveFile('word/header1.xml', headerBytes.length, headerBytes));
       contentTypes.addOverride('/word/header1.xml', OoxmlContentTypes.headerContentType);
+
+      if (headerRels.entries.isNotEmpty) {
+        final relsXml = utf8.encode(headerRels.toXml());
+        archive.addFile(ArchiveFile('word/_rels/header1.xml.rels', relsXml.length, relsXml));
+      }
     }
 
     String? footerRId;
@@ -70,10 +76,16 @@ class OoxmlPackage {
         type: OoxmlRelationships.footerType,
         target: 'footer1.xml',
       );
-      final footerXml = OoxmlBuilder.buildFooterXml(firstFooter);
+      final footerRels = OoxmlRelationships();
+      final footerXml = OoxmlBuilder.buildFooterXml(firstFooter, footerRels: footerRels);
       final footerBytes = utf8.encode(footerXml);
       archive.addFile(ArchiveFile('word/footer1.xml', footerBytes.length, footerBytes));
       contentTypes.addOverride('/word/footer1.xml', OoxmlContentTypes.footerContentType);
+
+      if (footerRels.entries.isNotEmpty) {
+        final relsXml = utf8.encode(footerRels.toXml());
+        archive.addFile(ArchiveFile('word/_rels/footer1.xml.rels', relsXml.length, relsXml));
+      }
     }
 
     // Check for Lists / Numbering

@@ -1,0 +1,122 @@
+name: Build & Validate Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Validate Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend/go/go.sum
+
+      - name: Backend Go Tests
+        working-directory: backend/go
+        run: |
+          go vet ./...
+          go test -v ./...
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools
+        run: |
+          sdkmanager --install "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Extract Pubspec Version
+        working-directory: mobile/flutter
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')
+          VERSION_NAME=$(echo "$VERSION_LINE" | cut -d'+' -f1)
+          VERSION_CODE=$(echo "$VERSION_LINE" | cut -d'+' -f2)
+          echo "PUBSPEC_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "PUBSPEC_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "Extracted Version: $VERSION_NAME (Build $VERSION_CODE)"
+
+      - name: Flutter Dependencies
+        working-directory: mobile/flutter
+        run: flutter pub get
+
+      - name: Flutter Analyze
+        working-directory: mobile/flutter
+        run: flutter analyze
+
+      - name: Flutter Tests
+        working-directory: mobile/flutter
+        run: flutter test
+
+      - name: Build Debug APK
+        working-directory: mobile/flutter
+        run: flutter build apk --debug
+
+      - name: Build Release APK
+        working-directory: mobile/flutter
+        run: |
+          flutter build apk --release \
+            --build-name="${{ env.PUBSPEC_VERSION_NAME }}" \
+            --build-number="${{ env.PUBSPEC_VERSION_CODE }}"
+
+      - name: Validate APK Coherence via AAPT
+        run: |
+          APK_PATH="mobile/flutter/build/app/outputs/flutter-apk/app-release.apk"
+          AAPT_BIN=$(find $ANDROID_HOME/build-tools -name aapt | head -n 1)
+          if [ -z "$AAPT_BIN" ]; then
+            echo "Error: aapt binary not found in $ANDROID_HOME/build-tools"
+            exit 1
+          fi
+          echo "Using aapt binary: $AAPT_BIN"
+          BADGING_OUTPUT=$($AAPT_BIN dump badging "$APK_PATH")
+          echo "$BADGING_OUTPUT" | head -n 20
+
+          # Validate package name matches com.ghdinteractivestudio.morphpdf
+          PACKAGE_CHECK=$(echo "$BADGING_OUTPUT" | grep "package: name='com.ghdinteractivestudio.morphpdf'")
+          if [ -z "$PACKAGE_CHECK" ]; then
+            echo "Error: Package name mismatch! Expected com.ghdinteractivestudio.morphpdf"
+            exit 1
+          fi
+
+          echo "APK internal package validation passed."
+
+      - name: Package & Checksum Artifacts
+        run: |
+          BUILD_DIR="mobile/flutter/build/app/outputs/flutter-apk"
+          VERSION="${{ env.PUBSPEC_VERSION_NAME }}"
+          cp "$BUILD_DIR/app-release.apk" "$BUILD_DIR/MorphPDF-v${VERSION}.apk"
+
+          cd "$BUILD_DIR"
+          sha256sum app-release.apk "MorphPDF-v${VERSION}.apk" > app-release.apk.sha256
+          cat app-release.apk.sha256
+
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: morphpdf-apk-v${{ env.PUBSPEC_VERSION_NAME }}
+          path: |
+            mobile/flutter/build/app/outputs/flutter-apk/app-release.apk
+            mobile/flutter/build/app/outputs/flutter-apk/MorphPDF-v${{ env.PUBSPEC_VERSION_NAME }}.apk
+            mobile/flutter/build/app/outputs/flutter-apk/app-release.apk.sha256
+            mobile/flutter/build/app/outputs/flutter-apk/app-debug.apk

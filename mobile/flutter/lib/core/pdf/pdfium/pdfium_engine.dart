@@ -50,6 +50,9 @@ class PdfiumEngine {
 
   bool get isNative => _bindings != null;
 
+  /// The active execution engine type.
+  PdfEngineType get executionEngine => _bindings != null ? PdfEngineType.nativePdfium : PdfEngineType.fallbackParser;
+
   /// Inspects a PDF document and returns typed metadata.
   Future<PdfInspectionResult> inspect(String filePath) async {
     final file = File(filePath);
@@ -84,6 +87,7 @@ class PdfiumEngine {
         defaultHeight: height,
         version: '1.4',
         hasText: true,
+        executionEngine: PdfEngineType.nativePdfium,
       );
     }
 
@@ -285,27 +289,39 @@ class PdfiumEngine {
       }
     }
 
-    // Fallback extraction for test environments
+    // Fallback extraction for test environments and non-native executions.
+    // Documented scope & limits:
+    // - Supports uncompressed and FlateDecode streams.
+    // - Evaluates text operators: Tf, Td, TD, Tm, T*, Tj, and TJ.
+    // - Complex font encodings (ToUnicode CMap, CIDFonts), encryption, and vector clipping
+    //   strictly require native PDFium.
+    // - Never injects synthetic fake text when extraction yields no blocks.
     final file = File(filePath);
     final bytes = await file.readAsBytes();
     final content = utf8.decode(bytes, allowMalformed: true);
 
-    // Extract stream for the specific page if multiple streams exist
-    final streamRegex = RegExp(r'stream\s*(.*?)\s*endstream', dotAll: true);
-    final streamMatches = streamRegex.allMatches(content).toList();
-    final pageContent = (pageNumber <= streamMatches.length && pageNumber >= 1)
-        ? streamMatches[pageNumber - 1].group(1) ?? content
-        : content;
+    final pageContent = _extractPageContent(bytes, content, pageNumber);
 
-    // Scan PDF stream operators sequentially to track font size, coordinates, and text
     double currentFontSize = 12.0;
     double currentX = 50.0;
     double currentY = 780.0;
     final List<TextBlock> blocks = [];
     int idx = 1;
 
+    // Matches:
+    // 1) /F\d+ <size> Tf
+    // 2,3) <x> <y> Td / TD
+    // 4,5) <x> <y> Tm (from 6 matrix parameters a b c d e f)
+    // 6) T*
+    // 7) (<text>) Tj
+    // 8) [(<text>)...] TJ
     final opRegex = RegExp(
-      r'(?:/F\d+\s+(\d+(?:\.\d+)?)\s+Tf)|(?:(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Td)|(?:\((.*?)\)\s*Tj)',
+      r'(?:/F\d+\s+(\d+(?:\.\d+)?)\s+Tf)|'
+      r'(?:(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(?:Td|TD))|'
+      r'(?:(?:-?\d+(?:\.\d+)?\s+){4}(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Tm)|'
+      r'(?:T\*)|'
+      r'(?:\((.*?)\)\s*Tj)|'
+      r'(?:\[(.*?)\]\s*TJ)',
     );
     final matches = opRegex.allMatches(pageContent);
 
@@ -315,12 +331,32 @@ class PdfiumEngine {
       } else if (match.group(2) != null && match.group(3) != null) {
         currentX = double.tryParse(match.group(2)!) ?? currentX;
         currentY = double.tryParse(match.group(3)!) ?? currentY;
-      } else if (match.group(4) != null) {
-        final rawText = match.group(4)!;
-        final text = rawText
-            .replaceAll(r'\(', '(')
-            .replaceAll(r'\)', ')')
-            .replaceAll(r'\\', r'\');
+      } else if (match.group(4) != null && match.group(5) != null) {
+        currentX = double.tryParse(match.group(4)!) ?? currentX;
+        currentY = double.tryParse(match.group(5)!) ?? currentY;
+      } else if (match.group(0) == 'T*') {
+        currentY -= (currentFontSize + 4.0);
+      } else if (match.group(6) != null) {
+        final text = _unescapePdfString(match.group(6)!);
+        if (text.isNotEmpty) {
+          blocks.add(
+            TextBlock(
+              id: 'block_${pageNumber}_$idx',
+              pageNumber: pageNumber,
+              text: text,
+              x: currentX,
+              y: currentY,
+              width: text.length * (currentFontSize * 0.55),
+              height: currentFontSize > 0 ? currentFontSize : 16.0,
+              confidence: 1.0,
+              language: 'fr',
+            ),
+          );
+          currentY -= (currentFontSize + 8.0);
+          idx++;
+        }
+      } else if (match.group(7) != null) {
+        final text = _extractTjArrayText(match.group(7)!);
         if (text.isNotEmpty) {
           blocks.add(
             TextBlock(
@@ -339,22 +375,6 @@ class PdfiumEngine {
           idx++;
         }
       }
-    }
-
-    if (blocks.isEmpty) {
-      blocks.add(
-        TextBlock(
-          id: 'block_${pageNumber}_1',
-          pageNumber: pageNumber,
-          text: 'Texte extrait de la page $pageNumber.',
-          x: 50.0,
-          y: 780.0,
-          width: 250.0,
-          height: 16.0,
-          confidence: 1.0,
-          language: 'fr',
-        ),
-      );
     }
 
     return blocks;
@@ -452,6 +472,7 @@ class PdfiumEngine {
       defaultHeight: height,
       version: version,
       hasText: content.contains('BT') && content.contains('ET'),
+      executionEngine: PdfEngineType.fallbackParser,
     );
   }
 
@@ -533,5 +554,89 @@ class PdfiumEngine {
     }
 
     return bytes.buffer.asUint8List();
+  }
+
+  static String _extractPageContent(Uint8List bytes, String stringContent, int pageNumber) {
+    final streamRegex = RegExp(r'stream[\r\n]+(.*?)[\r\n]+endstream', dotAll: true);
+    final streamMatches = streamRegex.allMatches(stringContent).toList();
+    final candidate = (pageNumber <= streamMatches.length && pageNumber >= 1)
+        ? streamMatches[pageNumber - 1].group(1) ?? stringContent
+        : stringContent;
+
+    if (candidate.contains('Tj') || candidate.contains('TJ')) {
+      return candidate;
+    }
+
+    if (stringContent.contains('FlateDecode')) {
+      try {
+        final decompressed = _decompressFlateStreams(bytes);
+        if (pageNumber <= decompressed.length && pageNumber >= 1) {
+          return decompressed[pageNumber - 1];
+        } else if (decompressed.isNotEmpty) {
+          return decompressed.first;
+        }
+      } catch (_) {}
+    }
+
+    return candidate;
+  }
+
+  static List<String> _decompressFlateStreams(Uint8List bytes) {
+    final results = <String>[];
+    final streamKeyword = [115, 116, 114, 101, 97, 109]; // 'stream'
+    final endKeyword = [101, 110, 100, 115, 116, 114, 101, 97, 109]; // 'endstream'
+
+    int searchPos = 0;
+    while (searchPos < bytes.length) {
+      final streamIdx = _findSublist(bytes, streamKeyword, searchPos);
+      if (streamIdx == -1) break;
+
+      int start = streamIdx + 6;
+      if (start < bytes.length && bytes[start] == 13) start++;
+      if (start < bytes.length && bytes[start] == 10) start++;
+
+      final endIdx = _findSublist(bytes, endKeyword, start);
+      if (endIdx == -1) break;
+
+      int end = endIdx;
+      if (end > start && bytes[end - 1] == 10) end--;
+      if (end > start && bytes[end - 1] == 13) end--;
+
+      if (end > start) {
+        final rawStream = bytes.sublist(start, end);
+        try {
+          final decompressed = zlib.decode(rawStream);
+          final text = utf8.decode(decompressed, allowMalformed: true);
+          results.add(text);
+        } catch (_) {}
+      }
+      searchPos = endIdx + 9;
+    }
+    return results;
+  }
+
+  static int _findSublist(List<int> source, List<int> target, int start) {
+    if (target.isEmpty || start >= source.length) return -1;
+    outer:
+    for (int i = start; i <= source.length - target.length; i++) {
+      for (int j = 0; j < target.length; j++) {
+        if (source[i + j] != target[j]) continue outer;
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  static String _unescapePdfString(String raw) {
+    return raw
+        .replaceAll(r'\(', '(')
+        .replaceAll(r'\)', ')')
+        .replaceAll(r'\\', r'\');
+  }
+
+  static String _extractTjArrayText(String tjContent) {
+    final strRegex = RegExp(r'\((.*?)\)');
+    final parts = strRegex.allMatches(tjContent).map((m) => _unescapePdfString(m.group(1) ?? ''));
+    return parts.join('');
   }
 }

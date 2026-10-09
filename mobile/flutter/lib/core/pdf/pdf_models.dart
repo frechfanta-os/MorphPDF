@@ -2,6 +2,15 @@ import 'dart:typed_data';
 import 'dart:ui';
 import '../../shared/models/text_block.dart';
 
+/// The underlying engine used to inspect and extract PDF content.
+enum PdfEngineType {
+  /// Google PDFium loaded natively via Dart FFI.
+  nativePdfium,
+
+  /// Lightweight Dart fallback parser for tests and environments without native binaries.
+  fallbackParser,
+}
+
 /// Detailed inspection result for a PDF document.
 class PdfInspectionResult {
   final String fileName;
@@ -12,6 +21,7 @@ class PdfInspectionResult {
   final String version;
   final bool isEncrypted;
   final bool hasText;
+  final PdfEngineType executionEngine;
 
   const PdfInspectionResult({
     required this.fileName,
@@ -22,6 +32,7 @@ class PdfInspectionResult {
     this.version = '1.4',
     this.isEncrypted = false,
     this.hasText = true,
+    this.executionEngine = PdfEngineType.fallbackParser,
   });
 
   Map<String, dynamic> toJson() => {
@@ -33,6 +44,7 @@ class PdfInspectionResult {
     'version': version,
     'isEncrypted': isEncrypted,
     'hasText': hasText,
+    'executionEngine': executionEngine.name,
   };
 }
 
