@@ -6,15 +6,19 @@ import '../../../core/docx/ooxml_package.dart';
 import '../../../core/pdf/pdf_exceptions.dart';
 import '../../../core/pdf/pdfium/pdfium_engine.dart';
 import '../../../shared/models/text_block.dart';
+import '../../ocr/domain/ocr_service.dart';
 import '../domain/conversion_converter.dart';
 
 /// Production sovereign PDF to Word (.docx) converter generating valid ECMA-376 packages
 /// directly from native PDFium text extractions and spatial layout reconstruction.
 class SovereignPdfToWordConverter implements PdfToWordConverter {
   final PdfiumEngine _pdfEngine;
+  final OcrService? ocrService;
 
-  SovereignPdfToWordConverter({PdfiumEngine? pdfEngine})
-      : _pdfEngine = pdfEngine ?? PdfiumEngine();
+  SovereignPdfToWordConverter({
+    PdfiumEngine? pdfEngine,
+    this.ocrService,
+  })  : _pdfEngine = pdfEngine ?? PdfiumEngine();
 
   @override
   String get converterName => 'MorphPDF Sovereign OOXML Converter';
@@ -44,6 +48,23 @@ class SovereignPdfToWordConverter implements PdfToWordConverter {
       } catch (_) {
         textBlocks = const [];
       }
+
+      // If page is scanned / image-only (0 native text blocks) and OCR is requested:
+      final activeOcr = ocrService;
+      if (textBlocks.isEmpty && options.ocrScannedPages && activeOcr != null) {
+        try {
+          textBlocks = await activeOcr.extractTextFromPdfPage(
+            pdfEngine: _pdfEngine,
+            pdfPath: pdfPath,
+            pageIndex: pageNum,
+            dpi: 150,
+            mode: options.ocrMode,
+          );
+        } catch (_) {
+          textBlocks = const [];
+        }
+      }
+
       allPagesBlocks.add(textBlocks);
     }
 

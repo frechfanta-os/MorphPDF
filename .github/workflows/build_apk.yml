@@ -122,6 +122,41 @@ jobs:
 
           echo "Native PDFium packaging validation passed."
 
+      - name: Validate OCR Model & Dictionary Packaging in Release APK
+        run: |
+          APK_PATH="mobile/flutter/build/app/outputs/flutter-apk/app-release.apk"
+          echo "Inspecting OCR assets in release APK..."
+
+          DET_MODEL=$(unzip -l "$APK_PATH" | grep "ch_PP-OCRv4_det_infer.onnx" || true)
+          if [ -z "$DET_MODEL" ]; then
+            echo "Error: ch_PP-OCRv4_det_infer.onnx is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed detection model: $DET_MODEL"
+
+          LATIN_MODEL=$(unzip -l "$APK_PATH" | grep "en_PP-OCRv4_rec_infer.onnx" || true)
+          if [ -z "$LATIN_MODEL" ]; then
+            echo "Error: en_PP-OCRv4_rec_infer.onnx is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed latin recognition model: $LATIN_MODEL"
+
+          ARABIC_MODEL=$(unzip -l "$APK_PATH" | grep "arabic_PP-OCRv3_rec_infer.onnx" || true)
+          if [ -z "$ARABIC_MODEL" ]; then
+            echo "Error: arabic_PP-OCRv3_rec_infer.onnx is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed arabic recognition model: $ARABIC_MODEL"
+
+          DICT_CHECK=$(unzip -l "$APK_PATH" | grep "arabic_dict.txt" || true)
+          if [ -z "$DICT_CHECK" ]; then
+            echo "Error: arabic_dict.txt is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed dictionaries present."
+
+          echo "OCR asset packaging validation passed."
+
       - name: Package & Checksum Artifacts
         run: |
           BUILD_DIR="mobile/flutter/build/app/outputs/flutter-apk"
