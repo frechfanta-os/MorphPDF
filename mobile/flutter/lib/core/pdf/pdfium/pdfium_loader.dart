@@ -7,6 +7,7 @@ class PdfiumLoader {
   static PdfiumBindings? _cachedBindings;
   static bool _attemptedLoad = false;
   static bool _isAvailable = false;
+  static String? _loadError;
 
   /// Whether real native PDFium library was found and loaded successfully.
   static bool get isAvailable {
@@ -18,6 +19,12 @@ class PdfiumLoader {
   static PdfiumBindings? get bindings {
     _ensureInitialized();
     return _cachedBindings;
+  }
+
+  /// Diagnostic error message if native dynamic library loading failed.
+  static String? get loadError {
+    _ensureInitialized();
+    return _loadError;
   }
 
   static void _ensureInitialized() {
@@ -40,10 +47,12 @@ class PdfiumLoader {
       // Initialize PDFium library
       _cachedBindings!.initLibrary(nullptr);
       _isAvailable = true;
-    } catch (_) {
+      _loadError = null;
+    } catch (e) {
       // libpdfium.so not present in current test environment / host OS
       _cachedBindings = null;
       _isAvailable = false;
+      _loadError = e.toString();
     }
   }
 
@@ -52,5 +61,6 @@ class PdfiumLoader {
     _cachedBindings = mockBindings;
     _isAvailable = mockBindings != null;
     _attemptedLoad = true;
+    _loadError = null;
   }
 }

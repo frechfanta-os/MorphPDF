@@ -101,6 +101,27 @@ jobs:
 
           echo "APK internal package validation passed."
 
+      - name: Validate Native PDFium Packaging in Release APK
+        run: |
+          APK_PATH="mobile/flutter/build/app/outputs/flutter-apk/app-release.apk"
+          echo "Inspecting native shared libraries in release APK..."
+
+          # Verify arm64-v8a libpdfium.so is present in the release APK
+          ARM64_PDFIUM=$(unzip -l "$APK_PATH" | grep "lib/arm64-v8a/libpdfium.so" || true)
+          if [ -z "$ARM64_PDFIUM" ]; then
+            echo "Error: lib/arm64-v8a/libpdfium.so is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed: $ARM64_PDFIUM"
+
+          # Verify armeabi-v7a libpdfium.so is present
+          ARMV7_PDFIUM=$(unzip -l "$APK_PATH" | grep "lib/armeabi-v7a/libpdfium.so" || true)
+          if [ -n "$ARMV7_PDFIUM" ]; then
+            echo "Confirmed: $ARMV7_PDFIUM"
+          fi
+
+          echo "Native PDFium packaging validation passed."
+
       - name: Package & Checksum Artifacts
         run: |
           BUILD_DIR="mobile/flutter/build/app/outputs/flutter-apk"

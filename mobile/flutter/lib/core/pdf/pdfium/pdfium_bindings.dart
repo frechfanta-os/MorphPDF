@@ -32,7 +32,7 @@ typedef FpdfGetPageHeightFDart = double Function(Pointer<Void> page);
 typedef FpdfBitmapCreateExNative = Pointer<Void> Function(Int32 width, Int32 height, Int32 format, Pointer<Void> firstScan, Int32 stride);
 typedef FpdfBitmapCreateExDart = Pointer<Void> Function(int width, int height, int format, Pointer<Void> firstScan, int stride);
 
-typedef FpdfBitmapFillRectNative = Void Function(Pointer<Void> bitmap, Int32 left, Int32 top, Int32 width, Int32 height, Uint32 color);
+typedef FpdfBitmapFillRectNative = Void Function(Pointer<Void> bitmap, Int32 left, Int32 top, Int32 width, Int32 height, UnsignedLong color);
 typedef FpdfBitmapFillRectDart = void Function(Pointer<Void> bitmap, int left, int top, int width, int height, int color);
 
 typedef FpdfRenderPageBitmapNative = Void Function(Pointer<Void> bitmap, Pointer<Void> page, Int32 startX, Int32 startY, Int32 sizeX, Int32 sizeY, Int32 rotate, Int32 flags);
@@ -62,7 +62,7 @@ typedef FpdfTextGetCharBoxDart = int Function(Pointer<Void> textPage, int index,
 typedef FpdfTextGetFontSizeNative = Double Function(Pointer<Void> textPage, Int32 index);
 typedef FpdfTextGetFontSizeDart = double Function(Pointer<Void> textPage, int index);
 
-typedef FpdfGetLastErrorNative = Uint32 Function();
+typedef FpdfGetLastErrorNative = UnsignedLong Function();
 typedef FpdfGetLastErrorDart = int Function();
 
 /// Native FFI bindings to Google PDFium C library.
@@ -114,4 +114,26 @@ class PdfiumBindings {
     textGetFontSize = dynamicLibrary.lookupFunction<FpdfTextGetFontSizeNative, FpdfTextGetFontSizeDart>('FPDFText_GetFontSize');
     getLastError = dynamicLibrary.lookupFunction<FpdfGetLastErrorNative, FpdfGetLastErrorDart>('FPDF_GetLastError');
   }
+}
+
+/// Official PDFium error codes returned by FPDF_GetLastError.
+abstract class PdfiumErrorCodes {
+  /// No error.
+  static const int success = 0;
+  /// Unknown error.
+  static const int unknown = 1;
+  /// File not found or could not be opened.
+  static const int fileNotFound = 2;
+  /// File not in PDF format or corrupted.
+  static const int formatError = 3;
+  /// Password required or incorrect password.
+  static const int passwordRequired = 4;
+  /// Unsupported security scheme.
+  static const int securityUnsupported = 5;
+  /// Page not found or content error.
+  static const int pageError = 6;
+  /// Load XFA error.
+  static const int xfaLoadError = 7;
+  /// Layout XFA error.
+  static const int xfaLayoutError = 8;
 }

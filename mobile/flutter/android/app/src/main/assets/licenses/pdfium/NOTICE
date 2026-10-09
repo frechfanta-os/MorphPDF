@@ -1,0 +1,10 @@
+PDFium - Google Open Source PDF Engine
+Distribution: bblanchon/pdfium-binaries
+Upstream Version: Chromium 157.0.8086.0 (release chromium/8086)
+Target Architectures:
+- arm64-v8a (aarch64-linux-android) - SHA256: 6e4d0057ca7bfca33617924246d98de4632ff7565ecfa3c16a61194e6dbde0bc
+- armeabi-v7a (arm-linux-androideabi) - SHA256: 5dd61938c27a980f91f737bc260be572e22f432b9c3fd1a4c1bec47f45605c06
+
+Upstream URL: https://github.com/bblanchon/pdfium-binaries
+License: BSD 3-Clause & Apache-2.0
+See LICENSE and pdfium.txt for full copyright and license terms.

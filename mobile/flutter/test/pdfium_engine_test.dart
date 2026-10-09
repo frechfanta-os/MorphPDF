@@ -1,6 +1,10 @@
+import 'dart:ffi';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:morphpdf/core/pdf/pdf_exceptions.dart';
+import 'package:morphpdf/core/pdf/pdf_models.dart';
+import 'package:morphpdf/core/pdf/pdfium/pdfium_bindings.dart';
 import 'package:morphpdf/core/pdf/pdfium/pdfium_engine.dart';
+import 'package:morphpdf/core/pdf/pdfium/pdfium_loader.dart';
 
 void main() {
   group('PdfiumEngine Tests', () {
@@ -100,6 +104,50 @@ void main() {
       engine.dispose();
       // Repeating dispose should not throw
       engine.dispose();
+    });
+
+    test('executionEngine correctly reflects fallbackParser when native bindings are absent', () {
+      expect(engine.isNative, isFalse);
+      expect(engine.executionEngine, PdfEngineType.fallbackParser);
+    });
+  });
+
+  group('PdfiumErrorCodes Tests', () {
+    test('error code constants match official Google PDFium specifications', () {
+      expect(PdfiumErrorCodes.success, 0);
+      expect(PdfiumErrorCodes.unknown, 1);
+      expect(PdfiumErrorCodes.fileNotFound, 2);
+      expect(PdfiumErrorCodes.formatError, 3);
+      expect(PdfiumErrorCodes.passwordRequired, 4);
+      expect(PdfiumErrorCodes.securityUnsupported, 5);
+      expect(PdfiumErrorCodes.pageError, 6);
+      expect(PdfiumErrorCodes.xfaLoadError, 7);
+      expect(PdfiumErrorCodes.xfaLayoutError, 8);
+    });
+  });
+
+  group('PdfDocumentHandle Lifecycle Tests', () {
+    test('checkValid throws PdfInvalidDocumentException for nullptr handle', () {
+      final handle = PdfDocumentHandle(nullptr, 'test.pdf');
+      expect(() => handle.checkValid(), throwsA(isA<PdfInvalidDocumentException>()));
+    });
+
+    test('checkValid throws PdfInvalidDocumentException when marked closed', () {
+      final handle = PdfDocumentHandle(nullptr, 'test.pdf');
+      handle.isClosed = true;
+      expect(() => handle.checkValid(), throwsA(isA<PdfInvalidDocumentException>()));
+    });
+  });
+
+  group('PdfiumLoader Lifecycle Tests', () {
+    tearDown(() {
+      PdfiumLoader.resetForTesting();
+    });
+
+    test('resetForTesting manages simulated native binding state', () {
+      PdfiumLoader.resetForTesting(mockBindings: null);
+      expect(PdfiumLoader.isAvailable, isFalse);
+      expect(PdfiumLoader.bindings, isNull);
     });
   });
 }

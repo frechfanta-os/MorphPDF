@@ -73,9 +73,12 @@ class PdfiumEngine {
       if (pageCount > 0) {
         final pagePtr = _bindings.loadPage(handle.pointer, 0);
         if (pagePtr != nullptr) {
-          width = _bindings.getPageWidth(pagePtr);
-          height = _bindings.getPageHeight(pagePtr);
-          _bindings.closePage(pagePtr);
+          try {
+            width = _bindings.getPageWidth(pagePtr);
+            height = _bindings.getPageHeight(pagePtr);
+          } finally {
+            _bindings.closePage(pagePtr);
+          }
         }
       }
 
@@ -114,9 +117,12 @@ class PdfiumEngine {
         double w = inspection.defaultWidth;
         double h = inspection.defaultHeight;
         if (pagePtr != nullptr) {
-          w = _bindings.getPageWidth(pagePtr);
-          h = _bindings.getPageHeight(pagePtr);
-          _bindings.closePage(pagePtr);
+          try {
+            w = _bindings.getPageWidth(pagePtr);
+            h = _bindings.getPageHeight(pagePtr);
+          } finally {
+            _bindings.closePage(pagePtr);
+          }
         }
         pages.add(PageModel(pageNumber: i + 1, width: w, height: h, rotation: 0));
       }
@@ -168,20 +174,22 @@ class PdfiumEngine {
           throw PdfRenderFailedException(pageNumber, 'Allocation bitmap échouée');
         }
 
-        // Fill with white background (0xFFFFFFFF)
-        _bindings.bitmapFillRect(bitmap, 0, 0, widthPx, heightPx, 0xFFFFFFFF);
-        // Render page with antialiasing and text render flags (0x01 | 0x02)
-        _bindings.renderPageBitmap(bitmap, pagePtr, 0, 0, widthPx, heightPx, 0, 0x03);
+        try {
+          // Fill with white background (0xFFFFFFFF)
+          _bindings.bitmapFillRect(bitmap, 0, 0, widthPx, heightPx, 0xFFFFFFFF);
+          // Render page with antialiasing and text render flags (0x01 | 0x02)
+          _bindings.renderPageBitmap(bitmap, pagePtr, 0, 0, widthPx, heightPx, 0, 0x03);
 
-        final bufferPtr = _bindings.bitmapGetBuffer(bitmap);
-        final bufferSize = widthPx * heightPx * 4;
-        final rawBytes = bufferPtr.asTypedList(bufferSize);
+          final bufferPtr = _bindings.bitmapGetBuffer(bitmap);
+          final bufferSize = widthPx * heightPx * 4;
+          final rawBytes = bufferPtr.asTypedList(bufferSize);
 
-        final bytes = _createBmpFromRgba(rawBytes, widthPx, heightPx);
-        _bindings.bitmapDestroy(bitmap);
-
-        _pageCache.put(cacheKey, bytes);
-        return bytes;
+          final bytes = _createBmpFromRgba(rawBytes, widthPx, heightPx);
+          _pageCache.put(cacheKey, bytes);
+          return bytes;
+        } finally {
+          _bindings.bitmapDestroy(bitmap);
+        }
       } finally {
         _bindings.closePage(pagePtr);
       }
@@ -229,62 +237,64 @@ class PdfiumEngine {
         throw PdfTextExtractionFailedException(pageNumber);
       }
 
-      final textPagePtr = _bindings.textLoadPage(pagePtr);
-      if (textPagePtr == nullptr) {
-        _bindings.closePage(pagePtr);
-        return const [];
-      }
-
       try {
-        final charCount = _bindings.textCountChars(textPagePtr);
-        if (charCount <= 0) return const [];
-
-        final List<RawCharBox> rawChars = [];
-        final leftPtr = calloc<Double>();
-        final rightPtr = calloc<Double>();
-        final bottomPtr = calloc<Double>();
-        final topPtr = calloc<Double>();
-        final charBuffer = calloc<Uint16>(2);
-
-        try {
-          for (int i = 0; i < charCount; i++) {
-            final len = _bindings.textGetText(textPagePtr, i, 1, charBuffer);
-            if (len <= 0) continue;
-            final charStr = String.fromCharCode(charBuffer[0]);
-
-            _bindings.textGetCharBox(textPagePtr, i, leftPtr, rightPtr, bottomPtr, topPtr);
-            final fontSize = _bindings.textGetFontSize(textPagePtr, i);
-
-            final l = leftPtr.value;
-            final r = rightPtr.value;
-            final b = bottomPtr.value;
-            final t = topPtr.value;
-
-            rawChars.add(
-              RawCharBox(
-                char: charStr,
-                x: l,
-                y: b,
-                width: max(0.0, r - l),
-                height: max(0.0, t - b),
-                fontSize: fontSize > 0 ? fontSize : 12.0,
-              ),
-            );
-          }
-        } finally {
-          calloc.free(leftPtr);
-          calloc.free(rightPtr);
-          calloc.free(bottomPtr);
-          calloc.free(topPtr);
-          calloc.free(charBuffer);
+        final textPagePtr = _bindings.textLoadPage(pagePtr);
+        if (textPagePtr == nullptr) {
+          return const [];
         }
 
-        return TextGrouper.groupCharacters(
-          pageNumber: pageNumber,
-          rawChars: rawChars,
-        );
+        try {
+          final charCount = _bindings.textCountChars(textPagePtr);
+          if (charCount <= 0) return const [];
+
+          final List<RawCharBox> rawChars = [];
+          final leftPtr = calloc<Double>();
+          final rightPtr = calloc<Double>();
+          final bottomPtr = calloc<Double>();
+          final topPtr = calloc<Double>();
+          final charBuffer = calloc<Uint16>(2);
+
+          try {
+            for (int i = 0; i < charCount; i++) {
+              final len = _bindings.textGetText(textPagePtr, i, 1, charBuffer);
+              if (len <= 0) continue;
+              final charStr = String.fromCharCode(charBuffer[0]);
+
+              _bindings.textGetCharBox(textPagePtr, i, leftPtr, rightPtr, bottomPtr, topPtr);
+              final fontSize = _bindings.textGetFontSize(textPagePtr, i);
+
+              final l = leftPtr.value;
+              final r = rightPtr.value;
+              final b = bottomPtr.value;
+              final t = topPtr.value;
+
+              rawChars.add(
+                RawCharBox(
+                  char: charStr,
+                  x: l,
+                  y: b,
+                  width: max(0.0, r - l),
+                  height: max(0.0, t - b),
+                  fontSize: fontSize > 0 ? fontSize : 12.0,
+                ),
+              );
+            }
+          } finally {
+            calloc.free(leftPtr);
+            calloc.free(rightPtr);
+            calloc.free(bottomPtr);
+            calloc.free(topPtr);
+            calloc.free(charBuffer);
+          }
+
+          return TextGrouper.groupCharacters(
+            pageNumber: pageNumber,
+            rawChars: rawChars,
+          );
+        } finally {
+          _bindings.textClosePage(textPagePtr);
+        }
       } finally {
-        _bindings.textClosePage(textPagePtr);
         _bindings.closePage(pagePtr);
       }
     }
@@ -417,7 +427,10 @@ class PdfiumEngine {
   PdfDocumentHandle _getOrOpenDocument(String filePath) {
     if (_openDocuments.containsKey(filePath)) {
       final handle = _openDocuments[filePath]!;
-      if (!handle.isClosed) return handle;
+      if (!handle.isClosed && handle.pointer != nullptr) {
+        handle.checkValid();
+        return handle;
+      }
     }
 
     final cPath = filePath.toNativeUtf8();
@@ -425,12 +438,17 @@ class PdfiumEngine {
       final docPtr = _bindings!.loadDocument(cPath, nullptr);
       if (docPtr == nullptr) {
         final err = _bindings.getLastError();
-        if (err == 1) { // FPDF_ERR_PASSWORD
+        if (err == PdfiumErrorCodes.passwordRequired) {
           throw const PdfPasswordRequiredException();
+        } else if (err == PdfiumErrorCodes.fileNotFound) {
+          throw PdfFileNotFoundException(filePath);
+        } else if (err == PdfiumErrorCodes.formatError) {
+          throw PdfInvalidDocumentException('Format PDF invalide ou corrompu (code FPDF: $err)', filePath);
         }
-        throw PdfInvalidDocumentException('Échec de chargement PDFium (code: $err)', filePath);
+        throw PdfInvalidDocumentException('Échec de chargement PDFium (code FPDF: $err)', filePath);
       }
       final handle = PdfDocumentHandle(docPtr, filePath);
+      handle.checkValid();
       _openDocuments[filePath] = handle;
       return handle;
     } finally {
