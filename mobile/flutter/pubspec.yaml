@@ -71,7 +71,6 @@ flutter:
     - assets/models/ocr/
     - assets/models/ocr/dictionaries/
     - assets/models/ocr/detection/
-    - assets/models/ocr/classification/
     - assets/models/ocr/recognition/arabic/
     - assets/models/ocr/recognition/latin/
 
