@@ -8,11 +8,11 @@ import 'package:morphpdf/core/pdf/pdfium/pdfium_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  final bool nativeLibraryPresent = File('/tmp/libpdfium.so').existsSync();
 
   group('Phase 4: Real Native PDFium FFI Execution Tests', () {
     late PdfiumBindings bindings;
     late PdfiumEngine nativeEngine;
-    final bool nativeLibraryPresent = File('/tmp/libpdfium.so').existsSync();
 
     setUpAll(() {
       if (nativeLibraryPresent) {
@@ -143,5 +143,5 @@ void main() {
         if (await emptyFile.exists()) await emptyFile.delete();
       }
     });
-  });
+  }, skip: !nativeLibraryPresent ? 'Native /tmp/libpdfium.so not present on this host' : null);
 }
