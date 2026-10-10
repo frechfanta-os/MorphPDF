@@ -406,7 +406,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                         : ListView.separated(
                             controller: scrollController,
                             itemCount: state.currentTextBlocks.length,
-                            separatorBuilder: (_, _) => const Divider(),
+                            separatorBuilder: (_, __) => const Divider(),
                             itemBuilder: (context, i) {
                               final block = state.currentTextBlocks[i];
                               return ListTile(
