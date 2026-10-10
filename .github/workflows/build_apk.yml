@@ -122,6 +122,18 @@ jobs:
 
           echo "Native PDFium packaging validation passed."
 
+      - name: Validate ONNX Runtime Native Packaging in Release APK
+        run: |
+          APK_PATH="mobile/flutter/build/app/outputs/flutter-apk/app-release.apk"
+          echo "Inspecting ONNX Runtime native binaries in release APK..."
+
+          ORT_CHECK=$(unzip -l "$APK_PATH" | grep "libonnxruntime.so" || true)
+          if [ -z "$ORT_CHECK" ]; then
+            echo "Error: libonnxruntime.so is missing from release APK!"
+            exit 1
+          fi
+          echo "Confirmed ONNX Runtime packaging: $ORT_CHECK"
+
       - name: Validate OCR Model & Dictionary Packaging in Release APK
         run: |
           APK_PATH="mobile/flutter/build/app/outputs/flutter-apk/app-release.apk"

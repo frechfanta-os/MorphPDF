@@ -56,6 +56,43 @@ jobs:
         working-directory: mobile/flutter
         run: flutter analyze
 
+      - name: Verify Models & Native Libraries Integrity
+        working-directory: mobile/flutter
+        run: |
+          echo "Verifying OCR models and dictionaries against models_manifest.json..."
+          python3 -c "
+          import json, hashlib, os, sys
+          with open('assets/models/ocr/models_manifest.json', 'r') as f:
+              manifest = json.load(f)
+          models = manifest['models']
+          for m_key, m_info in models.items():
+              path = m_info['file_path']
+              expected_sha = m_info['sha256']
+              if not os.path.exists(path):
+                  print(f'Error: Model file {path} not found!')
+                  sys.exit(1)
+              with open(path, 'rb') as mf:
+                  actual_sha = hashlib.sha256(mf.read()).hexdigest()
+              if actual_sha != expected_sha:
+                  print(f'Error: SHA-256 mismatch for {path}!')
+                  sys.exit(1)
+              print(f'Verified {m_key}: {actual_sha}')
+              if 'dictionary_file' in m_info:
+                  dict_path = m_info['dictionary_file']
+                  dict_sha = m_info['dictionary_sha256']
+                  with open(dict_path, 'rb') as df:
+                      actual_dict_sha = hashlib.sha256(df.read()).hexdigest()
+                  if actual_dict_sha != dict_sha:
+                      print(f'Error: SHA-256 mismatch for {dict_path}!')
+                      sys.exit(1)
+                  print(f'Verified dictionary {dict_path}: {actual_dict_sha}')
+          "
+          echo "Verifying native PDFium libraries in jniLibs..."
+          test -f android/app/src/main/jniLibs/arm64-v8a/libpdfium.so || exit 1
+          test -f android/app/src/main/jniLibs/armeabi-v7a/libpdfium.so || exit 1
+          echo "Native PDFium libraries confirmed."
+
       - name: Flutter Tests
         working-directory: mobile/flutter
         run: flutter test --coverage
+
