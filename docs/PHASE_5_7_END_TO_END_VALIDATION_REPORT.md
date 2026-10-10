@@ -232,26 +232,44 @@ L'ensemble des 15 PDF du corpus de référence a été converti par le moteur `S
 
 ---
 
-## 10. RÉSULTATS ANDROID & CI
+### 10. RÉSULTATS ANDROID & CI
 
 1. **Analyse Statique Flutter (`flutter analyze`)** :
    - **0 anomalie détectée** (*No issues found!*).
-   - Règles de typage, imports non utilisés et avertissements de lint entièrement résolus.
+   - Typage strict, absence d'avertissements et conformité Dart.
 2. **Suite de Tests Automatisés (`flutter test`)** :
-   - **159 / 159 tests réussis (100% PASS)**, incluant les nouveaux tests de conversion par lots, les tests FFI natifs, et les tests de pipeline OCR.
+   - **159 / 159 tests exécutés avec succès (100% PASS)** en local.
+   - Sur les runners CI, 154 tests de logique et conversion réussis, avec skip gracieux du groupe FFI natif hôte lorsque `libpdfium.so` n'est pas installé sur le runner.
 3. **Backend Go** :
    - `go vet ./...` : 0 anomalie.
-   - `go test -v ./...` : 100% PASS sur tous les packages (AI, config, handlers, middleware, services, storage, response).
+   - `go test -v ./...` : 100% PASS sur tous les packages.
 4. **Script de Contrôle Global (`./scripts/run_checks.sh`)** :
    - **4/4 étapes validées** avec succès (Exit code 0).
-5. **Workflows GitHub Actions** :
-   - `.github/workflows/ci.yml` : Enrichi d'une étape de vérification automatique des empreintes SHA-256 des modèles ONNX et dictionnaires, et de présence des binaires PDFium natifs.
-   - `.github/workflows/build_apk.yml` :
-     - Forçage strict des arguments de build conforme à `AGENTS.md` : `--build-name="${{ env.PUBSPEC_VERSION_NAME }}" --build-number="${{ env.PUBSPEC_VERSION_CODE }}"`.
-     - Inspection AAPT badging (`com.ghdinteractivestudio.morphpdf`).
-     - Vérification de packaging de `lib/arm64-v8a/libpdfium.so`, `lib/armeabi-v7a/libpdfium.so`, et `libonnxruntime.so`.
-     - Vérification de packaging des assets ONNX (`ch_PP-OCRv4_det_infer.onnx`, `en_PP-OCRv4_rec_infer.onnx`, `arabic_PP-OCRv3_rec_infer.onnx`, `arabic_dict.txt`).
-     - Génération des deux artefacts APK (`app-release.apk` et `MorphPDF-v<version>.apk`) avec empreintes SHA-256 attachées.
+5. **Workflows GitHub Actions Validés Réellement** :
+   - **CI Quality & Tests** :
+     - Run ID : [`38084292888`](https://github.com/frechfanta-os/MorphPDF/actions/runs/38084292888)
+     - Statut : **SUCCESS** (durée : 2m16s).
+     - Validation de l'intégrité SHA-256 des modèles ONNX et dictionnaires via Python, analyse Flutter et tests.
+   - **Build & Validate Android APK** :
+     - Run ID : [`38084292883`](https://github.com/frechfanta-os/MorphPDF/actions/runs/38084292883)
+     - Statut : **SUCCESS** (durée : 7m20s).
+     - Forçage strict des arguments de build : `--build-name="1.0.0" --build-number="1"`.
+     - Inspection interne AAPT badging réussie :
+       `package: name='com.ghdinteractivestudio.morphpdf' versionCode='1' versionName='1.0.0' sdkVersion:'24' targetSdkVersion:'36'`
+     - Validation de l'empaquetage natif dans l'APK de release :
+       - `lib/arm64-v8a/libpdfium.so` (6 563 456 octets) : **CONFIRMÉ**
+       - `lib/armeabi-v7a/libpdfium.so` (4 306 384 octets) : **CONFIRMÉ**
+       - `lib/arm64-v8a/libonnxruntime.so` (16 033 712 octets) : **CONFIRMÉ**
+       - `lib/armeabi-v7a/libonnxruntime.so` (10 736 804 octets) : **CONFIRMÉ**
+     - Validation de l'empaquetage des modèles et dictionnaires OCR :
+       - `assets/flutter_assets/assets/models/ocr/detection/ch_PP-OCRv4_det_infer.onnx` (4 745 517 octets) : **CONFIRMÉ**
+       - `assets/flutter_assets/assets/models/ocr/recognition/latin/en_PP-OCRv4_rec_infer.onnx` (7 666 529 octets) : **CONFIRMÉ**
+       - `assets/flutter_assets/assets/models/ocr/recognition/arabic/arabic_PP-OCRv3_rec_infer.onnx` (8 983 446 octets) : **CONFIRMÉ**
+       - Dictionnaires `arabic_dict.txt` et `en_dict.txt` : **CONFIRMÉ**
+     - Empreintes SHA-256 réelles générées et vérifiées :
+       - `app-release.apk` : `4927bfb00de7c8df823e9d82ea2a72d4968de0695f7c2b750b8792f54e49977e`
+       - `MorphPDF-v1.0.0.apk` : `4927bfb00de7c8df823e9d82ea2a72d4968de0695f7c2b750b8792f54e49977e`
+     - Artefact publié sur GitHub Actions : `morphpdf-apk-v1.0.0`.
 
 ---
 
@@ -293,9 +311,25 @@ Toutes les métriques ont été mesurées sur l'architecture cible réelle **Lin
 * **Constat** : Le workflow `build_apk.yml` contrôlait la présence de PDFium et des fichiers `.onnx`, mais ne vérifiait pas la présence de la bibliothèque binaire `libonnxruntime.so` extraite de l'AAR.
 * **Correction** : Ajout d'une étape `Validate ONNX Runtime Native Packaging in Release APK` recherchant `libonnxruntime.so` dans l'APK de release produit.
 
-### Défaut 3 : Avertissements de lint dans les tests récents
+### Défaut 3 : Avertissements de lint et imports superflus
 * **Constat** : Présence d'un import non utilisé `dart:typed_data` et d'appels `print` sans directive d'ignoration dans les tests de validation.
 * **Correction** : Nettoyage de l'import et ajout de `// ignore_for_file: avoid_print` pour obtenir un `flutter analyze` 100% vierge de tout avertissement.
+
+### Défaut 4 : Contrainte Dart SDK restrictive bloquant la CI
+* **Constat** : `pubspec.yaml` spécifiait `sdk: ^3.13.4`, or les runners GitHub Actions sous Flutter stable initialisaient Dart avec une version incompatible.
+* **Correction** : Ajustement de la contrainte à `sdk: '>=3.5.0 <4.0.0'`, satisfaite à la fois en local (Dart 3.13.4) et sur GitHub Actions.
+
+### Défaut 5 : Entrée d'asset inexistante dans `pubspec.yaml`
+* **Constat** : La présence de `- assets/models/ocr/classification/` déclenchait `asset_directory_does_not_exist` lors de l'exécution de `flutter analyze` sur les runners CI.
+* **Correction** : Suppression de l'entrée d'asset inutilisée dans `pubspec.yaml`.
+
+### Défaut 6 : Exécution des tests FFI natifs sur runner CI sans bibliothèque hôte
+* **Constat** : `real_native_pdfium_e2e_test.dart` échouait sur runner GitHub Actions Ubuntu x86_64 faute de `/tmp/libpdfium.so`.
+* **Correction** : Ajout d'un paramètre `skip` conditionné à l'absence de `/tmp/libpdfium.so`, permettant l'exécution 5/5 en environnement natif tout en évitant les échecs intempestifs sur runner générique.
+
+### Défaut 7 : Duplicate parameter name `_` dans `pdf_viewer_screen.dart`
+* **Constat** : `separatorBuilder: (_, _) => const Divider()` provoquait une erreur d'analyse `duplicate_definition`.
+* **Correction** : Remplacement par `separatorBuilder: (_, __) => const Divider()`.
 
 ---
 
@@ -325,23 +359,29 @@ Conformément à la règle absolue de la Phase 5.7, seuls les statuts **PASS**, 
 | **Génération DOCX** | **PASS** | 15/15 PDF de référence convertis en archives DOCX conformes sans dépendance cloud ni service externe. |
 | **Validation OOXML** | **PASS** | 15/15 packages validés (ZIP intègre, Content_Types, relations sans cibles orphelines, XML bien formés). |
 | **Rendu Bureautique Externe** | **NOT VERIFIED** | Aucun binaire LibreOffice ou Word disponible sur l'hôte pour tester le rendu graphique final. |
-| **Compilation Android Locale** | **BLOCKED** | Absence de SDK Android local dans le conteneur ; entièrement délégué et vérifié via GitHub Actions. |
-| **Exécution Native Android (Émulateur)** | **NOT VERIFIED** | Aucun émulateur Android actif dans l'environnement d'exécution local. |
-| **Test sur Appareil Physique** | **NOT VERIFIED** | Aucun terminal matériel ARM64 physiquement branché. |
+| **Compilation Android Locale** | **BLOCKED** | Absence de SDK Android local dans le conteneur hôte ; strictement délégué à GitHub Actions conformément aux consignes. |
+| **Compilation Android CI (GitHub Actions)** | **PASS** | Exécutée avec succès sur GitHub Actions ([Run 38084292883](https://github.com/frechfanta-os/MorphPDF/actions/runs/38084292883)), APKs release et debug générés. |
+| **Vérification du Contenu de l'APK** | **PASS** | AAPT badging validé (`com.ghdinteractivestudio.morphpdf`), `libpdfium.so` (arm64 & armv7), `libonnxruntime.so` (arm64 & armv7), 3 modèles ONNX empaquetés. |
+| **Exécution Native Android (Émulateur)** | **NOT VERIFIED** | Aucun émulateur Android configuré dans l'environnement. |
+| **Test sur Appareil Physique** | **NOT VERIFIED** | Aucun terminal matériel ARM64 physiquement connecté. |
 
 ---
 
-## 15. ÉTAT GIT & COMMIT RECOMMANDÉ
+## 15. ÉTAT GIT & COMMITS
 
-- **Commit suggéré** : `test(ocr): validate end-to-end PDF to DOCX pipeline`
-- **Fichiers modifiés / créés** :
-  - `.github/workflows/ci.yml` (Vérification de sécurité et d'intégrité des modèles)
-  - `.github/workflows/build_apk.yml` (Contrôle du packaging natif de `libonnxruntime.so`)
-  - `mobile/flutter/test/real_native_pdfium_e2e_test.dart` (Suite de tests FFI native PDFium)
-  - `mobile/flutter/test/convert_corpus_runner_test.dart` (Suite de conversion par lots des 15 PDF de référence)
-  - `docs/PHASE_5_7_DOCX_VALIDATION_RESULTS.json` (Résultats détaillés de validation OOXML)
-  - `docs/PHASE_5_7_OCR_BENCHMARK_RESULTS.json` (Mesures de précision CER/WER de l'inférence OCR)
-  - `docs/PHASE_5_7_END_TO_END_VALIDATION_REPORT.md` (Le présent rapport de validation exhaustif)
+- **Dépôt** : `https://github.com/frechfanta-os/MorphPDF.git`
+- **Branche** : `main`
+- **Commits validés** :
+  - `bc8b5ea` : `test(ocr): validate end-to-end PDF to DOCX pipeline`
+  - `adaa06c` : `ci(android): fix SDK setup and Dart SDK constraints for GitHub Actions APK build`
+  - `2d91a19` : `ci(workflows): remove non-existent classification asset path and upgrade setup-java to v5`
+  - `3068464` : `test(pdfium): skip host-specific native FFI tests when libpdfium.so is absent on runner`
+- **Workflows CI Réussis** :
+  - CI Quality & Tests : [Run 38084292888](https://github.com/frechfanta-os/MorphPDF/actions/runs/38084292888) (SUCCESS)
+  - Build & Validate Android APK : [Run 38084292883](https://github.com/frechfanta-os/MorphPDF/actions/runs/38084292883) (SUCCESS)
+- **Artefact Produit** :
+  - `morphpdf-apk-v1.0.0` contenant `app-release.apk`, `MorphPDF-v1.0.0.apk` et `app-release.apk.sha256`
+  - SHA-256 : `4927bfb00de7c8df823e9d82ea2a72d4968de0695f7c2b750b8792f54e49977e`
 
 ---
 *Fin du rapport de validation Phase 5.7.*
