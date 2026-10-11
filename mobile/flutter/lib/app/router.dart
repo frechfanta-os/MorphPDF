@@ -28,13 +28,15 @@ class AppRouter {
       case AppConstants.routeDocuments:
         return _buildRoute(const DocumentsScreen(), settings);
       case AppConstants.routePdfViewer:
-        return _buildRoute(const PdfViewerScreen(), settings);
+        final pdfPath = settings.arguments is String ? settings.arguments as String : null;
+        return _buildRoute(PdfViewerScreen(initialFilePath: pdfPath), settings);
       case AppConstants.routePdfEditor:
         return _buildRoute(const PdfEditorScreen(), settings);
       case AppConstants.routeScanner:
         return _buildRoute(const ScannerScreen(), settings);
       case AppConstants.routeOcr:
-        return _buildRoute(const OcrScreen(), settings);
+        final ocrPath = settings.arguments is String ? settings.arguments as String : null;
+        return _buildRoute(OcrScreen(initialFilePath: ocrPath), settings);
       case AppConstants.routeAi:
         return _buildRoute(const AiScreen(), settings);
       case AppConstants.routeCleanPdf:
@@ -42,7 +44,8 @@ class AppRouter {
       case AppConstants.routeMergeSplit:
         return _buildRoute(const MergeSplitScreen(), settings);
       case AppConstants.routeConversion:
-        return _buildRoute(const ConversionScreen(), settings);
+        final convPath = settings.arguments is String ? settings.arguments as String : null;
+        return _buildRoute(ConversionScreen(initialPdfPath: convPath), settings);
       case AppConstants.routeExport:
         return _buildRoute(const ExportScreen(), settings);
       case AppConstants.routeTemplates:

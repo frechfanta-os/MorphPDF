@@ -31,7 +31,7 @@ void main() {
 
       expect(find.text('Lecteur PDF'), findsOneWidget);
       expect(find.text('Aucun PDF sélectionné'), findsOneWidget);
-      expect(find.text('Ouvrir un exemple'), findsOneWidget);
+      expect(find.text('Sélectionner un document'), findsOneWidget);
     });
 
     testWidgets('Opens document, displays page, and navigates pages', (tester) async {

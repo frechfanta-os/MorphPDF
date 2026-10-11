@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:morphpdf/core/storage/recent_document.dart';
 import 'package:morphpdf/core/storage/storage_service.dart';
 import 'package:morphpdf/features/home/presentation/home_screen.dart';
 import 'package:morphpdf/features/home/presentation/splash_screen.dart';
@@ -28,6 +29,14 @@ class MockStorageService implements StorageService {
   Future<File> saveExport(String fileName, List<int> bytes) async => File(fileName);
   @override
   Future<List<File>> listExports() async => [];
+  @override
+  Future<List<RecentDocument>> getRecentDocuments() async => [];
+  @override
+  Future<void> addRecentDocument(String path, {String? name, int? sizeBytes, int? pageCount}) async {}
+  @override
+  Future<void> removeRecentDocument(String path) async {}
+  @override
+  Future<void> clearRecentDocuments() async {}
 }
 
 void main() {

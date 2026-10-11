@@ -7,7 +7,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFF60A5FA);
 
   // Secondary Accents
-  static const Color aiViolet = Color(0xFF8B5CF6);
+  static const Color aiViolet = Color(0xFF7C3AED);
   static const Color aiVioletDark = Color(0xFFA78BFA);
   
   static const Color successGreen = Color(0xFF10B981);

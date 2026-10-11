@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_dimensions.dart';
+import '../../../core/platform/native_file_picker.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import 'pdf_viewer_controller.dart';
@@ -58,14 +58,13 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         ),
         body: EmptyState(
           title: 'Aucun PDF sélectionné',
-          message: 'Sélectionnez un document PDF pour visualiser son contenu et ses pages.',
+          message: 'Sélectionnez un document PDF depuis votre appareil pour visualiser son contenu.',
           icon: Icons.picture_as_pdf_outlined,
-          actionLabel: 'Ouvrir un exemple',
-          onAction: () {
-            // Find sample fixture
-            const fixture = 'test/fixtures/doc_multipage.pdf';
-            if (File(fixture).existsSync()) {
-              ref.read(pdfViewerControllerProvider.notifier).loadDocument(fixture);
+          actionLabel: 'Sélectionner un document',
+          onAction: () async {
+            final path = await NativeFilePicker().pickPdfFile();
+            if (path != null) {
+              ref.read(pdfViewerControllerProvider.notifier).loadDocument(path);
             }
           },
         ),
@@ -83,6 +82,16 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         ),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_open_outlined),
+            tooltip: 'Ouvrir un autre PDF',
+            onPressed: () async {
+              final path = await NativeFilePicker().pickPdfFile();
+              if (path != null) {
+                ref.read(pdfViewerControllerProvider.notifier).loadDocument(path);
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline_rounded),
             tooltip: 'Métadonnées du document',
@@ -409,9 +418,15 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                             separatorBuilder: (_, __) => const Divider(),
                             itemBuilder: (context, i) {
                               final block = state.currentTextBlocks[i];
+                              final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(block.text);
                               return ListTile(
                                 dense: true,
-                                title: Text(block.text, style: const TextStyle(fontSize: 14)),
+                                title: SelectableText(
+                                  block.text,
+                                  style: const TextStyle(fontSize: 14),
+                                  textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                                ),
                                 subtitle: Text(
                                   'x: ${block.x.toStringAsFixed(1)}, y: ${block.y.toStringAsFixed(1)}, w: ${block.width.toStringAsFixed(1)}, h: ${block.height.toStringAsFixed(1)}',
                                   style: const TextStyle(fontSize: 11, color: Colors.grey),
