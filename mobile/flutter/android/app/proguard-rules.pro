@@ -10,3 +10,7 @@
 
 # Preserve MorphPDF OCR bridge classes
 -keep class com.ghdinteractivestudio.morphpdf.ocr.** { *; }
+
+# Preserve MorphPDF FilePicker bridge classes
+-keep class com.ghdinteractivestudio.morphpdf.picker.** { *; }
+
