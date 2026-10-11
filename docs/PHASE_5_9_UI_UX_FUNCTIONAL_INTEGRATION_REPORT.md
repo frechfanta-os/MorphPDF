@@ -139,3 +139,35 @@ All 168 tests passed!
 | Contraste WCAG AA (`aiViolet`) | **100% CONFORME** | `#7C3AED` validé ($\ge 4.67:1$) |
 | Flutter Analyze | **100% CONFORME** | 0 avertissement, 0 erreur |
 | Suite de tests | **100% CONFORME** | 168/168 tests au vert |
+| Build Release APK CI | **100% CONFORME** | Compilé avec succès via GitHub Actions (AAPT & architectures ARM64 vérifiées) |
+
+---
+
+## 6. VALIDATION CI GITHUB ACTIONS & ARTEFACTS APK
+
+### 6.1. Workflows GitHub Actions Exécutés
+- **CI Quality & Tests** :
+  - **Run ID** : [38148178444](https://github.com/frechfanta-os/MorphPDF/actions/runs/38148178444)
+  - **Statut** : `success`
+  - **Durée** : 1m 16s (Flutter Tests & Lint) / 18s (Go Checks)
+  - **Contrôles** : Flutter Analyze, Intégrité des modèles ONNX et bibliothèques natives, Suite complète des 168 tests Flutter, Go Vet et Go Tests.
+- **Build & Validate Android APK** :
+  - **Run ID** : [38148178455](https://github.com/frechfanta-os/MorphPDF/actions/runs/38148178455)
+  - **Statut** : `success`
+  - **Durée** : 4m 41s
+  - **Validation AAPT** : `com.ghdinteractivestudio.morphpdf` v1.0.0 (build 1)
+  - **Bibliothèques FFI empaquetées** : `libpdfium.so`, `libonnxruntime.so`
+  - **Assets empaquetés** : Modèles PaddleOCR ONNX & dictionnaires multilingues
+
+### 6.2. Empreintes Cryptographiques des Artefacts Produits
+- **Taille de l'APK Release** : 130.6 Mo
+- **Fichiers produits** :
+  - `app-release.apk`
+  - `MorphPDF-v1.0.0.apk`
+- **Empreinte SHA-256** :
+  ```
+  41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  app-release.apk
+  41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  MorphPDF-v1.0.0.apk
+  ```
+- **Fichier de vérification d'intégrité attaché** : `app-release.apk.sha256`
+
