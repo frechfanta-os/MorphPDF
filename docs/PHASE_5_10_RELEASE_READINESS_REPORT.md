@@ -157,10 +157,20 @@ Les modèles empaquetés sont indispensables au fonctionnement offline souverain
   L'APK actuel est compilé en mode `--release` pour les optimisations de performance et l'AOT Dart, mais est signé avec la clé Android Debug. Une clé de production (`upload-keystore.jks`) et les secrets GitHub Actions associés devront être configurés lors de la mise en release publique.
 
 ### 4.3. Empreintes SHA-256 Validées
-```
-41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  app-release.apk
-41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  MorphPDF-v1.0.0.apk
-```
+
+- **APK Release Initial Phase 5.9 (Run 38148178455)** :
+  ```
+  41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  app-release.apk
+  41737c88dca0576c171af8f8046f37379c03e27b94ad02200afd5074d1883843  MorphPDF-v1.0.0.apk
+  ```
+
+- **APK Release Durci Phase 5.10 (Run 38151704715)** :
+  ```
+  d3c8a323206f558be46e69062813ffb6658d3ecdaf22bdfe3c0695e60fab7990  app-release.apk
+  d3c8a323206f558be46e69062813ffb6658d3ecdaf22bdfe3c0695e60fab7990  MorphPDF-v1.0.0.apk
+  ```
+  *(Durcissements inclus : `android:allowBackup="false"`, protection R8 ProGuard `FilePickerBridge`)*
+
 
 ---
 
